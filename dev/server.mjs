@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Local dev gateway for Match Studio viewer.
- * Serves static assets and a minimal REST API backed by fixtures.
+ * Local dev server for Match Studio viewer.
+ * Serves static assets and fixture-backed /api/* responses.
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -75,7 +75,7 @@ function serveFile(res, absPath) {
     data = Buffer.from(
       data
         .toString('utf8')
-        .replaceAll('__NOVA_NO3D__', fs.existsSync(path.join(ROOT, 'm3d/manifest.json')) ? '0' : '1')
+        .replaceAll('__MS_NO3D__', fs.existsSync(path.join(ROOT, 'm3d/manifest.json')) ? '0' : '1')
     );
     headers['Cache-Control'] = 'no-store';
   } else if (['.js', '.css', '.json'].includes(ext)) {

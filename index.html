@@ -2841,7 +2841,7 @@ async function set3d(on, quiet) {
     toast("3D 初始化失败：" + (e && e.message || e));
   } finally { r3busy = false; }
 }
-const NO3D=__NOVA_NO3D__;   // 无 terrain GLB 资产时置 1：隐藏 3D 入口
+const NO3D=__MS_NO3D__;   // 宿主注入：无 terrain GLB 时为 1，隐藏 3D 入口
 if (NO3D) {
   ["qk-3d","s-3d"].forEach(i => { const el = $(i); if (el) el.style.display = "none"; });
   const pip = $("s-pip"); if (pip) pip.style.display = "none";
