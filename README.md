@@ -15,7 +15,7 @@
 
 ## 快速开始
 
-在任意目录克隆本仓库（与后端仓库分开存放即可）：
+在任意目录克隆本仓库即可：
 
 ```bash
 git clone https://github.com/thexin7/match-studio-viewer.git
@@ -23,7 +23,7 @@ cd match-studio-viewer
 npm run dev
 ```
 
-打开 [http://127.0.0.1:5173](http://127.0.0.1:5173)。内置 dev server 用 `dev/fixtures/` 模拟全部 `/api/*`，**无需任何外部服务**。
+打开 [http://127.0.0.1:5173](http://127.0.0.1:5173)。内置开发服务器用 `dev/fixtures/` 模拟全部 `/api/*`，**无需任何外部服务**。
 
 ## 架构
 
@@ -34,7 +34,7 @@ npm run dev
               └──静态──▶  index.html, ui/, m3d/, vendor/, avatars/
 ```
 
-本仓库**只包含浏览器客户端**。任何在同源实现 `/api/*` 契约的 HTTP 服务都可以驱动此 UI。
+本仓库**只包含浏览器客户端**。任何在同源实现 `/api/*` 契约的数据源都可以驱动此 UI。
 
 ## API 概览
 

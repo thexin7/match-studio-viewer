@@ -1,6 +1,6 @@
-# Match Studio Viewer — Agent 指南
+# Match Studio 查看器 — Agent 指南
 
-> **范围：** 本仓库是**独立的浏览器 UI 项目**。开发、测试、交付所需的一切都在本仓库内。只依赖本文档描述的 HTTP API 与 `dev/fixtures/` 样例数据。
+> **范围：** 本仓库是**独立的浏览器 UI 项目**。开发、测试、交付所需的一切都在本仓库内完成。只依赖本文档描述的 HTTP API 与 `dev/fixtures/` 样例数据，**不要假设存在其它仓库或服务端实现**。
 
 ## 项目是什么
 
@@ -35,14 +35,14 @@ UI **轮询同源 REST 接口**，不直连游戏服务器。
 ├── avatars/                # 干员头像 PNG（文件名 = 干员代号）
 ├── vendor/                 # 内嵌 Leaflet + Three.js（除升级外勿改）
 ├── dev/
-│   ├── server.mjs          # 本地静态服务 + fixture 版 /api/*
+│   ├── server.mjs          # 本地静态服务 + 样例 API
 │   └── fixtures/           # 样例 state / status JSON
-└── resources/              # 可选物品图标（运行时由外部提供）
+└── resources/              # 可选物品图标（运行时由外部目录提供）
 ```
 
 ## 数据流
 
-1. 轮询 `GET /api/state`（实时约 20 Hz；回放暂停/seek 时走回放时钟）。
+1. 轮询 `GET /api/state`（实时约 20 Hz；回放暂停/跳转时走回放时钟）。
 2. 轮询 `GET /api/status` 获取会话 / 回放元数据。
 3. 启动时 `GET /api/map` 返回地图目录（边界、旋转、默认地图 key）。
 4. 3D 地形从 `/m3d/<map>.glb` 加载；可选 `/api/map/<name>/meta` 做缓存标记。
@@ -61,9 +61,9 @@ UI **轮询同源 REST 接口**，不直连游戏服务器。
 | `self_name`, `self_hp` | string / object | 主视角身份 |
 | `live_active` | bool | `true` = 实时流，`false` = 回放或空闲 |
 | `entities` | array | 所有可绘制单位（见下） |
-| `flow`, `meta`, `cursor`, `status` | misc | 会话 / 回放 bookkeeping |
+| `flow`, `meta`, `cursor`, `status` | 杂项 | 会话 / 回放状态字段 |
 
-**Entity 对象**（部分字段 —— 重构时须保留全部现有字段）：
+**实体对象**（部分字段 —— 重构时须保留全部现有字段）：
 
 ```
 key, kind, name, hero, is_bot,
@@ -94,7 +94,7 @@ item_id, grade, price
 | 顶部 **战况岛** | 一眼看剩余对手、倒地、阵亡；展开看详情 |
 | 右侧 **干员台** | 按队伍/威胁分组的干员 + 下方物资列表 |
 | 左侧 **功能坞** | 设置，纵向 Tab（显示 / 3D / 物资 / 预警） |
-| 底部 **回放条** | 回放模式：播放/暂停、seek、倍速 |
+| 底部 **回放条** | 回放模式：播放/暂停、跳转、倍速 |
 | **视图切换** | 2D 地图 ↔ 3D 场景；相机：自由、俯视、第一跟随、第三跟随 |
 
 移动端（`max-width: 900px`）：侧栏退化为底部抽屉；触控优先的大点击区域。
@@ -106,7 +106,7 @@ item_id, grade, price
 ### P0 — 结构
 
 1. **`index.html` 巨石**（约 2900 行）：拆为 `ui/styles/`、`ui/app/` 模块、精简壳层。
-2. **双 CSS 体系**：内联 `<style>` + `shubao.css` → 单一 `:root` token + 单一组件表。
+2. **双 CSS 体系**：内联 `<style>` + `shubao.css` → 单一 `:root` 设计变量 + 单一组件样式表。
 3. **无构建步骤**：原生 ES module + import map；非必要勿上 webpack。
 
 ### P1 — 可维护性
@@ -136,9 +136,9 @@ item_id, grade, price
 npm run dev   # http://127.0.0.1:5173
 ```
 
-`dev/server.mjs` 提供静态文件与 fixture 版 `/api/*`。改 JS/CSS 后硬刷新（`Ctrl+Shift+R`）；模块 URL 改动后记得 bump `?v=`。
+`dev/server.mjs` 提供静态文件与样例版 `/api/*`。改 JS/CSS 后硬刷新（`Ctrl+Shift+R`）；模块 URL 改动后记得 bump `?v=`。
 
-宿主在投递 `index.html` 前会注入 `__MS_NO3D__`（`0` 或 `1`），无地形 GLB 时为 `1` 以隐藏 3D 入口。本地 dev server 会做同样替换。
+部署时，宿主可在投递 `index.html` 前注入 `__MS_NO3D__`（`0` 或 `1`）：无地形 GLB 时为 `1` 以隐藏 3D 入口。本地 dev server 会做同样替换。
 
 ## 编辑规则
 
@@ -160,15 +160,19 @@ npm run dev   # http://127.0.0.1:5173
 
 ## 建议重构顺序
 
-1. 从 `index.html` 抽出 CSS → `ui/styles/viewer.css`
-2. 纯函数 → `ui/app/constants.js` + `ui/app/format.js`
-3. 轮询循环 + 快照分发 → `ui/app/engine.js`
-4. Leaflet 图层 → `ui/app/map2d.js`
-5. 干员台/物资 DOM → `ui/app/roster.js`
-6. 用 `<script type="module">` 入口串联
-7. 以上完成后再考虑 TypeScript 或 bundler
+接到「整理前端」类任务时，按此顺序：
+
+1. 从 `index.html` 抽出 CSS → `ui/styles/viewer.css`；删掉内联重复规则。
+2. 纯函数（颜色、距离、格式化）→ `ui/app/constants.js` + `ui/app/format.js`。
+3. 轮询循环 + 快照分发 → `ui/app/engine.js`。
+4. Leaflet 图层 → `ui/app/map2d.js`。
+5. 干员台/物资 DOM → `ui/app/roster.js`。
+6. 在 `index.html` 用 `<script type="module">` 入口串联。
+7. 以上完成后再考虑 TypeScript 或 bundler。
 
 ## 质量门槛
+
+合格的改动应满足：
 
 - [ ] Chrome 桌面 + 移动端视口（约 390px 宽）可用
 - [ ] 2D 标记平滑、3D 第一视角相机无回归

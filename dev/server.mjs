@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Local dev server for Match Studio viewer.
- * Serves static assets and fixture-backed /api/* responses.
+ * Match Studio 本地开发服务器。
+ * 提供静态资源与样例版 /api/* 响应。
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -160,6 +160,6 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  console.log(`Match Studio dev server → http://${HOST}:${PORT}/`);
-  console.log('Fixtures: dev/fixtures/state.json (replay mode)');
+  console.log(`Match Studio 开发服务器 → http://${HOST}:${PORT}/`);
+  console.log('样例数据：dev/fixtures/state.json（回放模式）');
 });

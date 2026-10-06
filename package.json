@@ -2,7 +2,7 @@
   "name": "match-studio-viewer",
   "version": "0.1.0",
   "private": false,
-  "description": "Browser-based tactical match replay viewer (2D map + optional 3D scene)",
+  "description": "浏览器端战术比赛回放查看器（2D 态势图 + 可选 3D 场景）",
   "type": "module",
   "scripts": {
     "dev": "node dev/server.mjs",
