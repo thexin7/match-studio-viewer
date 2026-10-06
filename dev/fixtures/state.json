@@ -1,0 +1,3839 @@
+{
+  "cursor": {
+    "hi": 45817,
+    "live": false,
+    "lo": null,
+    "seq": 45817,
+    "speed": 0
+  },
+  "entities": [
+    {
+      "_pose_samples": 1958,
+      "bp": "战术快拆背包",
+      "bp_id": 11080002002,
+      "camp": 106,
+      "ch": 5,
+      "cr": "尼龙挎包",
+      "cr_id": 11070002001,
+      "curr_weapon": "UZI",
+      "curr_weapon_id": 18020000004,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 30701,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1098,
+      "fight": {
+        "bIsActive": false
+      },
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        7,
+        7
+      ],
+      "helmet_durability": 7,
+      "helmet_id": 11010002001,
+      "helmet_maximum": 7,
+      "hero": "威龙",
+      "hero_id": 88000000025,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 45530,
+        "source": "property_replication",
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-5",
+      "kind": "player",
+      "life_seq": 24490,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "风雨57",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45735,
+      "pose_timestamp_ms": 1789875697509,
+      "rel": [
+        15457.900000000023,
+        11041.699999999953,
+        -486
+      ],
+      "silent_seq": 82,
+      "slot": 5,
+      "team": 3,
+      "vest": 2,
+      "vest_dur": [
+        32,
+        34
+      ],
+      "vest_durability": 32,
+      "vest_id": 11050002004,
+      "vest_maximum": 34,
+      "world": [
+        378029.4,
+        -780226.3,
+        -16685.8
+      ],
+      "xyz": [
+        378029.4,
+        -780226.3,
+        -16685.8
+      ],
+      "yaw": 312.1875
+    },
+    {
+      "_pose_samples": 2290,
+      "bp": "露营背包",
+      "bp_id": 11080002004,
+      "camp": 106,
+      "ch": 6,
+      "cr": "尼龙挎包",
+      "cr_id": 11070002001,
+      "curr_weapon": "CAR-15",
+      "curr_weapon_id": 18010000031,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 31514,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1106,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        10,
+        10
+      ],
+      "helmet_durability": 10,
+      "helmet_id": 11010002003,
+      "helmet_maximum": 10,
+      "hero": "蜂医",
+      "hero_id": 88000000027,
+      "hp": {
+        "abdomen": [
+          30,
+          30
+        ],
+        "head": [
+          40,
+          40
+        ],
+        "larm": [
+          30,
+          30
+        ],
+        "lleg": [
+          40,
+          40
+        ],
+        "rarm": [
+          30,
+          30
+        ],
+        "rleg": [
+          30,
+          30
+        ],
+        "seq": 18345,
+        "source": "property_replication",
+        "thorax": [
+          50,
+          50
+        ],
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-6",
+      "kind": "player",
+      "life_seq": 18345,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "我之意CupidCC3",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        14168.200000000012,
+        6464.599999999977,
+        -562
+      ],
+      "silent_seq": 0,
+      "slot": 6,
+      "team": 3,
+      "vest": 2,
+      "vest_dur": [
+        26,
+        26
+      ],
+      "vest_durability": 26,
+      "vest_id": 11050002003,
+      "vest_maximum": 26,
+      "weapon": "激素枪",
+      "weapon_id": 18070000030,
+      "world": [
+        376739.7,
+        -784803.4,
+        -16761.8
+      ],
+      "xyz": [
+        376739.7,
+        -784803.4,
+        -16761.8
+      ],
+      "yaw": 234.84375
+    },
+    {
+      "_pose_samples": 2260,
+      "bp": "突袭战术背包",
+      "bp_id": 11080002003,
+      "camp": 106,
+      "ch": 7,
+      "cr": "尼龙挎包",
+      "cr_id": 11070002001,
+      "curr_weapon": "AKS-74U",
+      "curr_weapon_id": 18010000010,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 30301,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1110,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        5,
+        10
+      ],
+      "helmet_durability": 5,
+      "helmet_id": 11010002002,
+      "helmet_maximum": 10,
+      "hero": "露娜",
+      "hero_id": 88000000028,
+      "hp": {
+        "abdomen": [
+          20.5,
+          30
+        ],
+        "head": [
+          40,
+          40
+        ],
+        "larm": [
+          30,
+          30
+        ],
+        "lleg": [
+          0,
+          40
+        ],
+        "max_source": "operator_default",
+        "rarm": [
+          30,
+          30
+        ],
+        "rleg": [
+          0,
+          30
+        ],
+        "seq": 45776,
+        "source": "property_replication",
+        "thorax": [
+          50,
+          50
+        ],
+        "total": [
+          83,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-7",
+      "kind": "player",
+      "life_seq": 12069,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "漂亮ENJOY",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        15562.799999999988,
+        13247.5,
+        -537.5
+      ],
+      "silent_seq": 0,
+      "slot": 7,
+      "team": 3,
+      "vest": 2,
+      "vest_dur": [
+        0,
+        21
+      ],
+      "vest_durability": 16,
+      "vest_id": 11050002001,
+      "vest_maximum": 21,
+      "weapon": "进攻型破片手雷M67",
+      "weapon_id": 21010000001,
+      "world": [
+        378134.3,
+        -778020.5,
+        -16737.3
+      ],
+      "xyz": [
+        378134.3,
+        -778020.5,
+        -16737.3
+      ],
+      "yaw": 286.875
+    },
+    {
+      "_pose_samples": 943,
+      "bp": "3H战术背包",
+      "bp_id": 11080003002,
+      "camp": 106,
+      "ch": 8,
+      "cr": "尼龙挎包",
+      "cr_id": 11070002001,
+      "curr_weapon": "野牛",
+      "curr_weapon_id": 18020000005,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 40833,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1122,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        12,
+        12
+      ],
+      "helmet_durability": 12,
+      "helmet_id": 11010002003,
+      "helmet_maximum": 12,
+      "hero": "威龙",
+      "hero_id": 88000000025,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 40849,
+        "source": "property_replication",
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-8",
+      "kind": "player",
+      "life_seq": 40849,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "gMRWOODY",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        -4254.5,
+        9671.099999999977,
+        -1080.5
+      ],
+      "silent_seq": 0,
+      "slot": 8,
+      "team": 4,
+      "vest": 2,
+      "vest_dur": [
+        20,
+        29
+      ],
+      "vest_durability": 20,
+      "vest_id": 11050002004,
+      "vest_maximum": 29,
+      "world": [
+        358317,
+        -781596.9,
+        -17280.3
+      ],
+      "xyz": [
+        358317,
+        -781596.9,
+        -17280.3
+      ],
+      "yaw": 70.3125
+    },
+    {
+      "_pose_samples": 845,
+      "bp": "露营背包",
+      "bp_id": 11080002004,
+      "camp": 106,
+      "ch": 9,
+      "cr": "D01轻型胸挂",
+      "cr_id": 11070002003,
+      "curr_weapon": "UZI",
+      "curr_weapon_id": 18020000004,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 38425,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1130,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 3,
+      "helmet_dur": [
+        11,
+        11
+      ],
+      "helmet_durability": 11,
+      "helmet_id": 11010003001,
+      "helmet_maximum": 11,
+      "hero": "蜂医",
+      "hero_id": 88000000027,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 38443,
+        "source": "property_replication",
+        "total": [
+          91.78,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-9",
+      "kind": "player",
+      "life_seq": 38443,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "勇士lentejo",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        -4696.900000000023,
+        9108.900000000023,
+        -1048
+      ],
+      "silent_seq": 0,
+      "slot": 9,
+      "team": 4,
+      "vest": 2,
+      "vest_dur": [
+        22,
+        23
+      ],
+      "vest_durability": 22,
+      "vest_id": 11050002002,
+      "vest_maximum": 23,
+      "world": [
+        357874.6,
+        -782159.1,
+        -17247.8
+      ],
+      "xyz": [
+        357874.6,
+        -782159.1,
+        -17247.8
+      ],
+      "yaw": 60.46875
+    },
+    {
+      "_pose_samples": 898,
+      "bp": "露营背包",
+      "bp_id": 11080002004,
+      "camp": 106,
+      "ch": 10,
+      "cr": "HK3便携胸挂",
+      "cr_id": 11070002002,
+      "curr_weapon": "AKS-74U",
+      "curr_weapon_id": 18010000010,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 38159,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1134,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 1,
+      "helmet_dur": [
+        5,
+        6
+      ],
+      "helmet_durability": 5,
+      "helmet_id": 11010001004,
+      "helmet_maximum": 6,
+      "hero": "露娜",
+      "hero_id": 88000000028,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 38185,
+        "source": "property_replication",
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-10",
+      "kind": "player",
+      "life_seq": 38185,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "玉面21",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        -4777.5,
+        9100.199999999953,
+        -1040
+      ],
+      "silent_seq": 0,
+      "slot": 10,
+      "team": 4,
+      "vest": 2,
+      "vest_dur": [
+        21,
+        35
+      ],
+      "vest_durability": 21,
+      "vest_id": 11050002004,
+      "vest_maximum": 35,
+      "world": [
+        357794,
+        -782167.8,
+        -17239.8
+      ],
+      "xyz": [
+        357794,
+        -782167.8,
+        -17239.8
+      ],
+      "yaw": 71.71875
+    },
+    {
+      "_pose_samples": 2230,
+      "bp": "轻型户外背包",
+      "bp_id": 11080002001,
+      "camp": 106,
+      "ch": 11,
+      "cr": "简易携行弹挂",
+      "cr_id": 11070003001,
+      "curr_weapon": "MP5",
+      "curr_weapon_id": 18020000001,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 41933,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1146,
+      "fight": {
+        "bReplicates": true
+      },
+      "fsm_states": [],
+      "helmet": 3,
+      "helmet_dur": [
+        11,
+        11
+      ],
+      "helmet_durability": 11,
+      "helmet_id": 11010003001,
+      "helmet_maximum": 11,
+      "hero": "威龙",
+      "hero_id": 88000000025,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 10991,
+        "source": "property_replication",
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-11",
+      "kind": "player",
+      "life_seq": 10991,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "极致killbill",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        -4173.299999999988,
+        1221,
+        -545.1000000000022
+      ],
+      "silent_seq": 0,
+      "slot": 11,
+      "team": 5,
+      "vest": 3,
+      "vest_dur": [
+        40,
+        40
+      ],
+      "vest_durability": 40,
+      "vest_id": 11050003003,
+      "vest_maximum": 40,
+      "weapon": "虎蹲炮",
+      "weapon_id": 18080000011,
+      "world": [
+        358398.2,
+        -790047,
+        -16744.9
+      ],
+      "xyz": [
+        358398.2,
+        -790047,
+        -16744.9
+      ],
+      "yaw": 52.03125
+    },
+    {
+      "_pose_samples": 2416,
+      "bp": "3H战术背包",
+      "bp_id": 11080003002,
+      "camp": 106,
+      "ch": 12,
+      "cr": "D01轻型胸挂",
+      "cr_id": 11070002003,
+      "curr_weapon": "PP19勇士",
+      "curr_weapon_id": 18020000009,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 20214,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1154,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        10,
+        11
+      ],
+      "helmet_durability": 10,
+      "helmet_id": 11010002004,
+      "helmet_maximum": 11,
+      "hero": "蜂医",
+      "hero_id": 88000000027,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 8962,
+        "source": "property_replication",
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-12",
+      "kind": "player",
+      "life_seq": 8962,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "糕Luz",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        -896.5,
+        -5378.699999999953,
+        -283.2999999999993
+      ],
+      "silent_seq": 0,
+      "slot": 12,
+      "team": 5,
+      "vest": 1,
+      "vest_dur": [
+        11,
+        11
+      ],
+      "vest_durability": 11,
+      "vest_id": 11050001001,
+      "vest_maximum": 11,
+      "weapon": "激素枪",
+      "weapon_id": 18070000030,
+      "world": [
+        361675,
+        -796646.7,
+        -16483.1
+      ],
+      "xyz": [
+        361675,
+        -796646.7,
+        -16483.1
+      ],
+      "yaw": 21.09375
+    },
+    {
+      "_pose_samples": 2154,
+      "bp": "DASH战术背包",
+      "bp_id": 11080003003,
+      "camp": 106,
+      "ch": 13,
+      "cr": "HD3战术胸挂",
+      "cr_id": 11070003002,
+      "curr_weapon": "SG552",
+      "curr_weapon_id": 18010000017,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 42677,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1162,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        7,
+        10
+      ],
+      "helmet_durability": 7,
+      "helmet_id": 11010002004,
+      "helmet_maximum": 10,
+      "hero": "露娜",
+      "hero_id": 88000000028,
+      "hp": {
+        "max_source": "operator_default",
+        "seq": 35627,
+        "source": "property_replication",
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-13",
+      "kind": "player",
+      "life_seq": 22000,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "6657倪倪",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45817,
+      "pose_timestamp_ms": 1789875699160,
+      "rel": [
+        -1072.5,
+        -5399.300000000047,
+        -283.2000000000007
+      ],
+      "silent_seq": 0,
+      "slot": 13,
+      "team": 5,
+      "vest": 2,
+      "vest_dur": [
+        0,
+        25
+      ],
+      "vest_durability": 25,
+      "vest_id": 11050002003,
+      "vest_maximum": 25,
+      "weapon": "侦察弓",
+      "weapon_id": 18130000002,
+      "world": [
+        361499,
+        -796667.3,
+        -16483
+      ],
+      "xyz": [
+        361499,
+        -796667.3,
+        -16483
+      ],
+      "yaw": 22.5
+    },
+    {
+      "_pose_samples": 2629,
+      "bp": "3H战术背包",
+      "bp_id": 11080003002,
+      "camp": 106,
+      "ch": 14,
+      "cr": "G01战术弹挂",
+      "cr_id": 11070003004,
+      "curr_weapon": "AKS-74U",
+      "curr_weapon_id": 18010000010,
+      "curr_weapon_known": true,
+      "curr_weapon_seq": 1397,
+      "curr_weapon_status": "resolved",
+      "dead": false,
+      "eid": 1166,
+      "fight": {},
+      "fsm_states": [],
+      "helmet": 2,
+      "helmet_dur": [
+        0,
+        9
+      ],
+      "helmet_durability": 9,
+      "helmet_id": 11010002002,
+      "hero": "威龙",
+      "hero_id": 88000000025,
+      "hp": {
+        "abdomen": [
+          30,
+          30
+        ],
+        "head": [
+          40,
+          40
+        ],
+        "larm": [
+          30,
+          30
+        ],
+        "lleg": [
+          40,
+          40
+        ],
+        "rarm": [
+          30,
+          30
+        ],
+        "rleg": [
+          30,
+          30
+        ],
+        "seq": 45810,
+        "source": "property_replication",
+        "thorax": [
+          50,
+          50
+        ],
+        "total": [
+          100,
+          100
+        ]
+      },
+      "is_bot": false,
+      "key": "slot-14",
+      "kind": "player",
+      "life_seq": 2411,
+      "life_source": "property_replication",
+      "life_state": "alive",
+      "life_status": 1,
+      "name": "方法Dysn0",
+      "out_of_range": false,
+      "pose_age_ms": 1,
+      "pose_seq": 45674,
+      "pose_timestamp_ms": 1789875696062,
+      "rel": [
+        15573.599999999977,
+        10615.099999999977,
+        -477.40000000000146
+      ],
+      "silent_seq": 143,
+      "slot": 14,
+      "team": 2,
+      "vest": 2,
+      "vest_dur": [
+        0,
+        25
+      ],
+      "vest_durability": 25,
+      "vest_id": 11050002002,
+      "weapon": "空手",
+      "weapon_id": 18110000000,
+      "world": [
+        378145.1,
+        -780652.9,
+        -16677.2
+      ],
+      "xyz": [
+        378145.1,
+        -780652.9,
+        -16677.2
+      ],
+      "yaw": 331.875
+    },
+    {
+      "ch": 3210,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1269,
+      "eid": 3210,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480443",
+      "item_id": "15030010014",
+      "item_state": null,
+      "key": "loot-3210",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "键盘",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2539,
+      "price_per_slot": 1269,
+      "rel": [
+        6649.900000000023,
+        18468.800000000047,
+        -668.7999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 3941,
+      "world": [
+        369221.4,
+        -772799.2,
+        -16868.6
+      ],
+      "xyz": [
+        369221.4,
+        -772799.2,
+        -16868.6
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 3464,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "durability": 1,
+      "eid": 3464,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480546",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-3464",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        5263,
+        21404.5,
+        -267.2999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 16109,
+      "world": [
+        367834.5,
+        -769863.5,
+        -16467.1
+      ],
+      "xyz": [
+        367834.5,
+        -769863.5,
+        -16467.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 3468,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1184,
+      "eid": 3468,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480446",
+      "item_id": "15080050019",
+      "item_state": null,
+      "key": "loot-3468",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "酒店宣传海报",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 4739,
+      "price_per_slot": 1184,
+      "rel": [
+        5271.799999999988,
+        21469.900000000023,
+        -267
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 16118,
+      "world": [
+        367843.3,
+        -769798.1,
+        -16466.8
+      ],
+      "xyz": [
+        367843.3,
+        -769798.1,
+        -16466.8
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 3504,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 922,
+      "eid": 3504,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480444",
+      "item_id": "15030010009",
+      "item_state": null,
+      "key": "loot-3504",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "鼠标",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 922,
+      "price_per_slot": 922,
+      "rel": [
+        13946.599999999977,
+        18368.900000000023,
+        -658.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 21239,
+      "world": [
+        376518.1,
+        -772899.1,
+        -16858.4
+      ],
+      "xyz": [
+        376518.1,
+        -772899.1,
+        -16858.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 3506,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1435,
+      "eid": 3506,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480445",
+      "item_id": "15030010011",
+      "item_state": null,
+      "key": "loot-3506",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "电源",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 5741,
+      "price_per_slot": 1435,
+      "rel": [
+        13663.099999999977,
+        18245.599999999977,
+        -658.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 21168,
+      "world": [
+        376234.6,
+        -773022.4,
+        -16858.4
+      ],
+      "xyz": [
+        376234.6,
+        -773022.4,
+        -16858.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4820,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 68903,
+      "eid": 4820,
+      "grade": 5,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480467",
+      "item_id": "15060080014",
+      "item_state": null,
+      "key": "loot-4820",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "咖啡",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 68903,
+      "price_per_slot": 68903,
+      "rel": [
+        6616,
+        6412.199999999953,
+        90.69999999999891
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 31932,
+      "world": [
+        369187.5,
+        -784855.8,
+        -16109.1
+      ],
+      "xyz": [
+        369187.5,
+        -784855.8,
+        -16109.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4822,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 3548,
+      "eid": 4822,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480472",
+      "item_id": "15080050110",
+      "item_state": null,
+      "key": "loot-4822",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "充电电池组",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 3548,
+      "price_per_slot": 3548,
+      "rel": [
+        6662.200000000012,
+        6131.800000000047,
+        -546.2000000000007
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 31672,
+      "world": [
+        369233.7,
+        -785136.2,
+        -16746
+      ],
+      "xyz": [
+        369233.7,
+        -785136.2,
+        -16746
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4982,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4982,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480465",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4982",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        6940.5,
+        3356.3000000000466,
+        98.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24196,
+      "world": [
+        369512,
+        -787911.7,
+        -16101
+      ],
+      "xyz": [
+        369512,
+        -787911.7,
+        -16101
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4984,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4984,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480466",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4984",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7305.599999999977,
+        2914.5,
+        98.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24202,
+      "world": [
+        369877.1,
+        -788353.5,
+        -16101
+      ],
+      "xyz": [
+        369877.1,
+        -788353.5,
+        -16101
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4986,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4986,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480468",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4986",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7246,
+        3081.0999999999767,
+        98.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24180,
+      "world": [
+        369817.5,
+        -788186.9,
+        -16101
+      ],
+      "xyz": [
+        369817.5,
+        -788186.9,
+        -16101
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4988,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4988,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480469",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4988",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        6968.799999999988,
+        3277.1999999999534,
+        98.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24202,
+      "world": [
+        369540.3,
+        -787990.8,
+        -16101
+      ],
+      "xyz": [
+        369540.3,
+        -787990.8,
+        -16101
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4990,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4990,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480470",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4990",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7862.5,
+        2282.9000000000233,
+        -444.2000000000007
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24216,
+      "world": [
+        370434,
+        -788985.1,
+        -16644
+      ],
+      "xyz": [
+        370434,
+        -788985.1,
+        -16644
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4992,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 2249,
+      "eid": 4992,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480471",
+      "item_id": "15060010010",
+      "item_state": null,
+      "key": "loot-4992",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "注射器",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2249,
+      "price_per_slot": 2249,
+      "rel": [
+        6766.400000000023,
+        5053.599999999977,
+        56
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 32007,
+      "world": [
+        369337.9,
+        -786214.4,
+        -16143.8
+      ],
+      "xyz": [
+        369337.9,
+        -786214.4,
+        -16143.8
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4994,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 927,
+      "eid": 4994,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480473",
+      "item_id": "15090910016",
+      "item_state": null,
+      "key": "loot-4994",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "伊利斯当地报纸",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 1855,
+      "price_per_slot": 927,
+      "rel": [
+        7274.099999999977,
+        4273.5,
+        88.39999999999964
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 32007,
+      "world": [
+        369845.6,
+        -786994.5,
+        -16111.4
+      ],
+      "xyz": [
+        369845.6,
+        -786994.5,
+        -16111.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4996,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4996,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480474",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4996",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7274.299999999988,
+        3002,
+        98.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24196,
+      "world": [
+        369845.8,
+        -788266,
+        -16101
+      ],
+      "xyz": [
+        369845.8,
+        -788266,
+        -16101
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 4998,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 4998,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480542",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-4998",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        6485,
+        2725.0999999999767,
+        -1091.9000000000015
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24444,
+      "world": [
+        369056.5,
+        -788542.9,
+        -17291.7
+      ],
+      "xyz": [
+        369056.5,
+        -788542.9,
+        -17291.7
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5000,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5000,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480548",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5000",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        8173.5,
+        2917.0999999999767,
+        -469.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24057,
+      "world": [
+        370745,
+        -788350.9,
+        -16669.4
+      ],
+      "xyz": [
+        370745,
+        -788350.9,
+        -16669.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5002,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5002,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480549",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5002",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7873.200000000012,
+        2804.5,
+        -469.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24128,
+      "world": [
+        370444.7,
+        -788463.5,
+        -16669.4
+      ],
+      "xyz": [
+        370444.7,
+        -788463.5,
+        -16669.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5004,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5004,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480550",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5004",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7276.5,
+        2693.6999999999534,
+        -445.90000000000146
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24232,
+      "world": [
+        369848,
+        -788574.3,
+        -16645.7
+      ],
+      "xyz": [
+        369848,
+        -788574.3,
+        -16645.7
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5006,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5006,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480551",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5006",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        6801.400000000023,
+        3996.1999999999534,
+        -454.90000000000146
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24128,
+      "world": [
+        369372.9,
+        -787271.8,
+        -16654.7
+      ],
+      "xyz": [
+        369372.9,
+        -787271.8,
+        -16654.7
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5008,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5008,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480552",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5008",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7432,
+        4254.699999999953,
+        -359.2999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 23953,
+      "world": [
+        370003.5,
+        -787013.3,
+        -16559.1
+      ],
+      "xyz": [
+        370003.5,
+        -787013.3,
+        -16559.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5022,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1435,
+      "eid": 5022,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480484",
+      "item_id": "15030010011",
+      "item_state": null,
+      "key": "loot-5022",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "电源",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 5741,
+      "price_per_slot": 1435,
+      "rel": [
+        6317.200000000012,
+        6184.800000000047,
+        -454.2000000000007
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 31793,
+      "world": [
+        368888.7,
+        -785083.2,
+        -16654
+      ],
+      "xyz": [
+        368888.7,
+        -785083.2,
+        -16654
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5028,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 945,
+      "eid": 5028,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480475",
+      "item_id": "15060080002",
+      "item_state": null,
+      "key": "loot-5028",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "酸奶",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 945,
+      "price_per_slot": 945,
+      "rel": [
+        6306.099999999977,
+        6105.5,
+        88.69999999999891
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 31932,
+      "world": [
+        368877.6,
+        -785162.5,
+        -16111.1
+      ],
+      "xyz": [
+        368877.6,
+        -785162.5,
+        -16111.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5032,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1742,
+      "eid": 5032,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480476",
+      "item_id": "15060080004",
+      "item_state": null,
+      "key": "loot-5032",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "无糖缓释能量棒",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 1742,
+      "price_per_slot": 1742,
+      "rel": [
+        6260.299999999988,
+        6230.5,
+        88.69999999999891
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 31932,
+      "world": [
+        368831.8,
+        -785037.5,
+        -16111.1
+      ],
+      "xyz": [
+        368831.8,
+        -785037.5,
+        -16111.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5040,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 60390,
+      "eid": 5040,
+      "grade": 5,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480485",
+      "item_id": "15080050168",
+      "item_state": null,
+      "key": "loot-5040",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "军用网络模块",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 60390,
+      "price_per_slot": 60390,
+      "rel": [
+        5969.599999999977,
+        6063.099999999977,
+        -454.2000000000007
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 26020,
+      "world": [
+        368541.1,
+        -785204.9,
+        -16654
+      ],
+      "xyz": [
+        368541.1,
+        -785204.9,
+        -16654
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5136,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 5757,
+      "eid": 5136,
+      "grade": 3,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480477",
+      "item_id": "15080050011",
+      "item_state": null,
+      "key": "loot-5136",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "古老的海盗望远镜",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 11515,
+      "price_per_slot": 5757,
+      "rel": [
+        5709.900000000023,
+        4801.699999999953,
+        51.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 34868,
+      "world": [
+        368281.4,
+        -786466.3,
+        -16148
+      ],
+      "xyz": [
+        368281.4,
+        -786466.3,
+        -16148
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5298,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 2554,
+      "eid": 5298,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480487",
+      "item_id": "15090910017",
+      "item_state": null,
+      "key": "loot-5298",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "黑潮走私日记",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 5108,
+      "price_per_slot": 2554,
+      "rel": [
+        4916.799999999988,
+        5071.800000000047,
+        -444.2999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 36511,
+      "world": [
+        367488.3,
+        -786196.2,
+        -16644.1
+      ],
+      "xyz": [
+        367488.3,
+        -786196.2,
+        -16644.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5302,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5302,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480493",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5302",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        5250,
+        4097.800000000047,
+        -454.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24520,
+      "world": [
+        367821.5,
+        -787170.2,
+        -16654.4
+      ],
+      "xyz": [
+        367821.5,
+        -787170.2,
+        -16654.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5306,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5306,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480490",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5306",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        5204.799999999988,
+        4079.0999999999767,
+        -454.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24538,
+      "world": [
+        367776.3,
+        -787188.9,
+        -16654.4
+      ],
+      "xyz": [
+        367776.3,
+        -787188.9,
+        -16654.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5310,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1269,
+      "eid": 5310,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480480",
+      "item_id": "15030010014",
+      "item_state": null,
+      "key": "loot-5310",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "键盘",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2539,
+      "price_per_slot": 1269,
+      "rel": [
+        5809.200000000012,
+        3156.8000000000466,
+        89.39999999999964
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 39918,
+      "world": [
+        368380.7,
+        -788111.2,
+        -16110.4
+      ],
+      "xyz": [
+        368380.7,
+        -788111.2,
+        -16110.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5314,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1782,
+      "eid": 5314,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480486",
+      "item_id": "15070010007",
+      "item_state": null,
+      "key": "loot-5314",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "建筑图纸3号",
+      "pickup_candidate_seq": 27107,
+      "pickup_status": "visible",
+      "price": 3565,
+      "price_per_slot": 1782,
+      "rel": [
+        4636.700000000012,
+        5131.099999999977,
+        -444.2999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 37475,
+      "world": [
+        367208.2,
+        -786136.9,
+        -16644.1
+      ],
+      "xyz": [
+        367208.2,
+        -786136.9,
+        -16644.1
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5318,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1269,
+      "eid": 5318,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480479",
+      "item_id": "15030010014",
+      "item_state": null,
+      "key": "loot-5318",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "键盘",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2539,
+      "price_per_slot": 1269,
+      "rel": [
+        5388.700000000012,
+        2899.3000000000466,
+        89.39999999999964
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 34628,
+      "world": [
+        367960.2,
+        -788368.7,
+        -16110.4
+      ],
+      "xyz": [
+        367960.2,
+        -788368.7,
+        -16110.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5320,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5320,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480489",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5320",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        5092.200000000012,
+        3099.6999999999534,
+        -454.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 25934,
+      "world": [
+        367663.7,
+        -788168.3,
+        -16654.4
+      ],
+      "xyz": [
+        367663.7,
+        -788168.3,
+        -16654.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5322,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5322,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480492",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5322",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        5518,
+        3276.0999999999767,
+        -454.6000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 24643,
+      "world": [
+        368089.5,
+        -787991.9,
+        -16654.4
+      ],
+      "xyz": [
+        368089.5,
+        -787991.9,
+        -16654.4
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5432,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 3548,
+      "eid": 5432,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480488",
+      "item_id": "15080050110",
+      "item_state": null,
+      "key": "loot-5432",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "充电电池组",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 3548,
+      "price_per_slot": 3548,
+      "rel": [
+        2538.7000000000116,
+        3639,
+        -449.7999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        365110.2,
+        -787629,
+        -16649.6
+      ],
+      "xyz": [
+        365110.2,
+        -787629,
+        -16649.6
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5434,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 2256,
+      "eid": 5434,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480491",
+      "item_id": "15020010020",
+      "item_state": null,
+      "key": "loot-5434",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "电笔",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2256,
+      "price_per_slot": 2256,
+      "rel": [
+        2667.9000000000233,
+        3798.0999999999767,
+        -447
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        365239.4,
+        -787469.9,
+        -16646.8
+      ],
+      "xyz": [
+        365239.4,
+        -787469.9,
+        -16646.8
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5436,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "durability": 90,
+      "eid": 5436,
+      "grade": null,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480553",
+      "item_id": "11050004002",
+      "item_state": null,
+      "key": "loot-5436",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "突击手防弹背心",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        2487,
+        3620.4000000000233,
+        -449.7999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        365058.5,
+        -787647.6,
+        -16649.6
+      ],
+      "xyz": [
+        365058.5,
+        -787647.6,
+        -16649.6
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5520,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 4387,
+      "eid": 5520,
+      "grade": 3,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480478",
+      "item_id": "15080050039",
+      "item_state": null,
+      "key": "loot-5520",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "电子温度计",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 17550,
+      "price_per_slot": 4387,
+      "rel": [
+        6210.700000000012,
+        2216.8000000000466,
+        89.09999999999854
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 34956,
+      "world": [
+        368782.2,
+        -789051.2,
+        -16110.7
+      ],
+      "xyz": [
+        368782.2,
+        -789051.2,
+        -16110.7
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 14112,
+      "box_status": null,
+      "carried": null,
+      "ch": 5532,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5532,
+      "empty": true,
+      "inventory_gid": "16910828429669042214",
+      "is_ai": true,
+      "key": "box-5532",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": true,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 3386,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        6258.5,
+        26902,
+        -217.20000000000073
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": "已搜空",
+      "status_key": "box_empty",
+      "world": [
+        368830,
+        -764366,
+        -16417
+      ],
+      "xyz": [
+        368830,
+        -764366,
+        -16417
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 24095,
+      "box_status": null,
+      "carried": null,
+      "ch": 5556,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5556,
+      "empty": null,
+      "inventory_gid": "16910828455438846068",
+      "is_ai": true,
+      "key": "box-5556",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": true,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": null,
+      "owner_binding": null,
+      "owner_dead": null,
+      "rel": [
+        -3142.5,
+        810,
+        -541.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": "已搜刮",
+      "status_key": "box_looted",
+      "world": [
+        359429,
+        -790458,
+        -16741
+      ],
+      "xyz": [
+        359429,
+        -790458,
+        -16741
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5662,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5662,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480564",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5662",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        16466.20000000001,
+        24366.300000000047,
+        -1014.7999999999993
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 12591,
+      "world": [
+        379037.7,
+        -766901.7,
+        -17214.6
+      ],
+      "xyz": [
+        379037.7,
+        -766901.7,
+        -17214.6
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 16514,
+      "box_status": null,
+      "carried": null,
+      "ch": 5670,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5670,
+      "empty": null,
+      "inventory_gid": "16910828481208649887",
+      "is_ai": true,
+      "key": "box-5670",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 3052,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        6605.5,
+        2866,
+        -541.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        369177,
+        -788402,
+        -16741
+      ],
+      "xyz": [
+        369177,
+        -788402,
+        -16741
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5690,
+      "channel_state": "irrelevant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 566,
+      "eid": 5690,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480496",
+      "item_id": "15080050112",
+      "item_state": null,
+      "key": "loot-5690",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "盒装蜡烛",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2264,
+      "price_per_slot": 566,
+      "rel": [
+        3528.5999999999767,
+        -3672.4000000000233,
+        -455.1000000000022
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42445,
+      "world": [
+        366100.1,
+        -794940.4,
+        -16654.9
+      ],
+      "xyz": [
+        366100.1,
+        -794940.4,
+        -16654.9
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 5692,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 5692,
+      "grade": null,
+      "identity_status": "missing_item_id",
+      "inventory_gid": "16910828240690480497",
+      "item_id": null,
+      "item_state": null,
+      "key": "loot-5692",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "物资",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        6317.599999999977,
+        -2614,
+        -419.7000000000007
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 40707,
+      "world": [
+        368889.1,
+        -793882,
+        -16619.5
+      ],
+      "xyz": [
+        368889.1,
+        -793882,
+        -16619.5
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 23924,
+      "box_status": null,
+      "carried": null,
+      "ch": 5738,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5738,
+      "empty": null,
+      "inventory_gid": "16910828515568388318",
+      "is_ai": true,
+      "key": "box-5738",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": true,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 5140,
+      "owner_binding": "actor_owner",
+      "owner_dead": false,
+      "rel": [
+        -2826.5,
+        1691,
+        2.7999999999992724
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": "已搜刮",
+      "status_key": "box_looted",
+      "world": [
+        359745,
+        -789577,
+        -16197
+      ],
+      "xyz": [
+        359745,
+        -789577,
+        -16197
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 17533,
+      "box_status": null,
+      "carried": null,
+      "ch": 5868,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5868,
+      "empty": null,
+      "inventory_gid": "16910828554223094105",
+      "is_ai": true,
+      "key": "box-5868",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": true,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 2184,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        7328.5,
+        26503,
+        -130.20000000000073
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": "已搜刮",
+      "status_key": "box_looted",
+      "world": [
+        369900,
+        -764765,
+        -16330
+      ],
+      "xyz": [
+        369900,
+        -764765,
+        -16330
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 16595,
+      "box_status": null,
+      "carried": null,
+      "ch": 5910,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5910,
+      "empty": null,
+      "inventory_gid": "16910828579992897922",
+      "is_ai": true,
+      "key": "box-5910",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 2974,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        8323.5,
+        2770,
+        2.7999999999992724
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        370895,
+        -788498,
+        -16197
+      ],
+      "xyz": [
+        370895,
+        -788498,
+        -16197
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 23973,
+      "box_status": null,
+      "carried": null,
+      "ch": 5934,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5934,
+      "empty": null,
+      "inventory_gid": "16910828588582832546",
+      "is_ai": true,
+      "key": "box-5934",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": true,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 4524,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        4613.5,
+        3395,
+        2.7999999999992724
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": "已搜刮",
+      "status_key": "box_looted",
+      "world": [
+        367185,
+        -787873,
+        -16197
+      ],
+      "xyz": [
+        367185,
+        -787873,
+        -16197
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 16767,
+      "box_status": null,
+      "carried": null,
+      "ch": 5966,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 5966,
+      "empty": null,
+      "inventory_gid": "16910828601467734463",
+      "is_ai": true,
+      "key": "box-5966",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 4904,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        6461.5,
+        17235,
+        -760.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        369033,
+        -774033,
+        -16960
+      ],
+      "xyz": [
+        369033,
+        -774033,
+        -16960
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 18962,
+      "box_status": null,
+      "carried": null,
+      "ch": 6318,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 6318,
+      "empty": null,
+      "inventory_gid": "16910828661597276740",
+      "is_ai": true,
+      "key": "box-6318",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 5218,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        4788.5,
+        4698,
+        2.7999999999992724
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        367360,
+        -786570,
+        -16197
+      ],
+      "xyz": [
+        367360,
+        -786570,
+        -16197
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6510,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1435,
+      "eid": 6510,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480494",
+      "item_id": "15030010011",
+      "item_state": null,
+      "key": "loot-6510",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "电源",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 5741,
+      "price_per_slot": 1435,
+      "rel": [
+        208.70000000001164,
+        3691.5999999999767,
+        -450.2000000000007
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        362780.2,
+        -787576.4,
+        -16650
+      ],
+      "xyz": [
+        362780.2,
+        -787576.4,
+        -16650
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6526,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 907,
+      "eid": 6526,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480495",
+      "item_id": "15080050049",
+      "item_state": null,
+      "key": "loot-6526",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "扑克牌-7",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 907,
+      "price_per_slot": 907,
+      "rel": [
+        370.20000000001164,
+        -730.8000000000466,
+        104.19999999999891
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 41897,
+      "world": [
+        362941.7,
+        -791998.8,
+        -16095.6
+      ],
+      "xyz": [
+        362941.7,
+        -791998.8,
+        -16095.6
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6530,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 2272,
+      "eid": 6530,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480554",
+      "item_id": "15030010002",
+      "item_state": null,
+      "key": "loot-6530",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "手机电池",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2272,
+      "price_per_slot": 2272,
+      "rel": [
+        -477.70000000001164,
+        721.5,
+        93.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        362093.8,
+        -790546.5,
+        -16106
+      ],
+      "xyz": [
+        362093.8,
+        -790546.5,
+        -16106
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6534,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1435,
+      "eid": 6534,
+      "grade": 2,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480461",
+      "item_id": "15030010011",
+      "item_state": null,
+      "key": "loot-6534",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "电源",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 5741,
+      "price_per_slot": 1435,
+      "rel": [
+        -967.5,
+        2848.9000000000233,
+        108.79999999999927
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        361604,
+        -788419.1,
+        -16091
+      ],
+      "xyz": [
+        361604,
+        -788419.1,
+        -16091
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6538,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 922,
+      "eid": 6538,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480483",
+      "item_id": "15030010009",
+      "item_state": null,
+      "key": "loot-6538",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "鼠标",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 922,
+      "price_per_slot": 922,
+      "rel": [
+        -1778.4000000000233,
+        2935.3000000000466,
+        85.39999999999964
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        360793.1,
+        -788332.7,
+        -16114.4
+      ],
+      "xyz": [
+        360793.1,
+        -788332.7,
+        -16114.4
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 41046,
+      "box_status": null,
+      "carried": null,
+      "ch": 6554,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 6554,
+      "empty": null,
+      "inventory_gid": "16910828343769696012",
+      "is_ai": true,
+      "key": "box-6554",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": null,
+      "owner_binding": null,
+      "owner_dead": null,
+      "rel": [
+        -10607.5,
+        -7743,
+        -540.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        351964,
+        -799011,
+        -16740
+      ],
+      "xyz": [
+        351964,
+        -799011,
+        -16740
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6572,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 17457,
+      "eid": 6572,
+      "grade": 3,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480574",
+      "item_id": "15040010022",
+      "item_state": null,
+      "key": "loot-6572",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "转换插座",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 17457,
+      "price_per_slot": 17457,
+      "rel": [
+        -3315.5,
+        357,
+        -1030
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        359256,
+        -790911,
+        -17229.8
+      ],
+      "xyz": [
+        359256,
+        -790911,
+        -17229.8
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6576,
+      "channel_state": "dormant",
+      "contents_known": false,
+      "count": 1,
+      "dgjz": 1132,
+      "eid": 6576,
+      "grade": 1,
+      "identity_status": "identified",
+      "inventory_gid": "16910828240690480481",
+      "item_id": "15010010004",
+      "item_state": null,
+      "key": "loot-6576",
+      "kind": "loot",
+      "metadata_status": "available",
+      "name": "含氟牙膏",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": 2264,
+      "price_per_slot": 1132,
+      "rel": [
+        -2907,
+        2512.5999999999767,
+        92.69999999999891
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 42283,
+      "world": [
+        359664.5,
+        -788755.4,
+        -16107.1
+      ],
+      "xyz": [
+        359664.5,
+        -788755.4,
+        -16107.1
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 31178,
+      "box_status": null,
+      "carried": null,
+      "ch": 6848,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 6848,
+      "empty": null,
+      "inventory_gid": "16910829009489629654",
+      "is_ai": true,
+      "key": "box-6848",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 4230,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        4662.5,
+        -2832,
+        -300.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        367234,
+        -794100,
+        -16500
+      ],
+      "xyz": [
+        367234,
+        -794100,
+        -16500
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 34111,
+      "box_status": null,
+      "carried": null,
+      "ch": 6902,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 6902,
+      "empty": null,
+      "inventory_gid": "16910829061029237309",
+      "is_ai": true,
+      "key": "box-6902",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 2578,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        6251.5,
+        324,
+        -541.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        368823,
+        -790944,
+        -16741
+      ],
+      "xyz": [
+        368823,
+        -790944,
+        -16741
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 33742,
+      "box_status": null,
+      "carried": null,
+      "ch": 6920,
+      "channel_state": "dormant",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 6920,
+      "empty": null,
+      "inventory_gid": "16910829095388975813",
+      "is_ai": true,
+      "key": "box-6920",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 2658,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        2656.5,
+        6938,
+        -199.20000000000073
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        365228,
+        -784330,
+        -16399
+      ],
+      "xyz": [
+        365228,
+        -784330,
+        -16399
+      ],
+      "yaw": null
+    },
+    {
+      "ch": 6972,
+      "channel_state": "irrelevant",
+      "contents_known": false,
+      "count": 1,
+      "eid": 6972,
+      "grade": null,
+      "identity_status": "identified",
+      "inventory_gid": "16910829155518518065",
+      "item_id": "18070000002",
+      "item_state": null,
+      "key": "loot-6972",
+      "kind": "loot",
+      "metadata_status": "missing",
+      "name": "CF98-A",
+      "pickup_candidate_seq": null,
+      "pickup_status": "visible",
+      "price": null,
+      "price_per_slot": null,
+      "rel": [
+        7858.200000000012,
+        -1758.9000000000233,
+        -267.5
+      ],
+      "slot": null,
+      "source_type": null,
+      "stack_count": 1,
+      "updated_seq": 40215,
+      "world": [
+        370429.7,
+        -793026.9,
+        -16467.3
+      ],
+      "xyz": [
+        370429.7,
+        -793026.9,
+        -16467.3
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 44973,
+      "box_status": null,
+      "carried": null,
+      "ch": 7038,
+      "channel_state": "open",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 7038,
+      "empty": true,
+      "inventory_gid": "16910829370266883312",
+      "is_ai": null,
+      "key": "box-7038",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": true,
+      "looting_count": 0,
+      "name": "INVTEXT(\"放我一马咩嗫\",\"1\")",
+      "owner_actor": 786,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        0.5,
+        0,
+        2.7999999999992724
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": "已搜空",
+      "status_key": "box_empty",
+      "world": [
+        362572,
+        -791268,
+        -16197
+      ],
+      "xyz": [
+        362572,
+        -791268,
+        -16197
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 43853,
+      "box_status": null,
+      "carried": null,
+      "ch": 7066,
+      "channel_state": "open",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 7066,
+      "empty": null,
+      "inventory_gid": "16910829456166229335",
+      "is_ai": true,
+      "key": "box-7066",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 5440,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        -8653.5,
+        2425,
+        -524.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        353918,
+        -788843,
+        -16724
+      ],
+      "xyz": [
+        353918,
+        -788843,
+        -16724
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 44356,
+      "box_status": null,
+      "carried": null,
+      "ch": 7090,
+      "channel_state": "open",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 7090,
+      "empty": null,
+      "inventory_gid": "16910829499115902321",
+      "is_ai": true,
+      "key": "box-7090",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 6208,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        -6506.5,
+        -724,
+        -754.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        356065,
+        -791992,
+        -16954
+      ],
+      "xyz": [
+        356065,
+        -791992,
+        -16954
+      ],
+      "yaw": null
+    },
+    {
+      "box_seq": 44490,
+      "box_status": null,
+      "carried": null,
+      "ch": 7110,
+      "channel_state": "open",
+      "contents": [],
+      "contents_known": false,
+      "contents_revealed": false,
+      "contents_seq": null,
+      "deceased_uin": null,
+      "decode_status": "exact",
+      "eid": 7110,
+      "empty": null,
+      "inventory_gid": "16910829507705836945",
+      "is_ai": true,
+      "key": "box-7110",
+      "kind": "box",
+      "location_source": "spawn",
+      "looted": null,
+      "looting_count": 0,
+      "name": "人机死亡盒",
+      "owner_actor": 5572,
+      "owner_binding": "actor_owner",
+      "owner_dead": true,
+      "rel": [
+        -1565.5,
+        -7349,
+        -559.2000000000007
+      ],
+      "searching_count": 0,
+      "slot": null,
+      "status": null,
+      "status_key": null,
+      "world": [
+        361006,
+        -798617,
+        -16759
+      ],
+      "xyz": [
+        361006,
+        -798617,
+        -16759
+      ],
+      "yaw": null
+    }
+  ],
+  "epoch": 1,
+  "flow": "demo-session / 1",
+  "gone": 29,
+  "identityRecords": [
+    {
+      "actor": 4,
+      "name": "橘子話",
+      "team": 1
+    },
+    {
+      "actor": 178,
+      "name": "窝室臭启峨",
+      "team": 1
+    },
+    {
+      "actor": 752,
+      "name": "放我一马咩嗫",
+      "team": 1
+    },
+    {
+      "actor": 1094,
+      "name": "风雨57",
+      "team": 3
+    },
+    {
+      "actor": 1102,
+      "name": "我之意CupidCC3",
+      "team": 3
+    },
+    {
+      "actor": 1114,
+      "name": "漂亮ENJOY",
+      "team": 3
+    },
+    {
+      "actor": 1118,
+      "name": "gMRWOODY",
+      "team": 4
+    },
+    {
+      "actor": 1126,
+      "name": "勇士lentejo",
+      "team": 4
+    },
+    {
+      "actor": 1138,
+      "name": "玉面21",
+      "team": 4
+    },
+    {
+      "actor": 1142,
+      "name": "极致killbill",
+      "team": 5
+    },
+    {
+      "actor": 1150,
+      "name": "糕Luz",
+      "team": 5
+    },
+    {
+      "actor": 1158,
+      "name": "6657倪倪",
+      "team": 5
+    },
+    {
+      "actor": 1170,
+      "name": "方法Dysn0",
+      "team": 2
+    },
+    {
+      "actor": 1284,
+      "name": "了mariob",
+      "team": 2
+    },
+    {
+      "actor": 1400,
+      "name": "啊Fast",
+      "team": 2
+    },
+    {
+      "actor": 1512,
+      "name": "窝室臭启峨",
+      "team": 1
+    }
+  ],
+  "live_active": false,
+  "names": [
+    {
+      "ch": 5,
+      "kind": "player",
+      "name": "风雨57"
+    },
+    {
+      "ch": 6,
+      "kind": "player",
+      "name": "我之意CupidCC3"
+    },
+    {
+      "ch": 7,
+      "kind": "player",
+      "name": "漂亮ENJOY"
+    },
+    {
+      "ch": 8,
+      "kind": "player",
+      "name": "gMRWOODY"
+    },
+    {
+      "ch": 9,
+      "kind": "player",
+      "name": "勇士lentejo"
+    },
+    {
+      "ch": 10,
+      "kind": "player",
+      "name": "玉面21"
+    },
+    {
+      "ch": 11,
+      "kind": "player",
+      "name": "极致killbill"
+    },
+    {
+      "ch": 12,
+      "kind": "player",
+      "name": "糕Luz"
+    },
+    {
+      "ch": 13,
+      "kind": "player",
+      "name": "6657倪倪"
+    },
+    {
+      "ch": 14,
+      "kind": "player",
+      "name": "方法Dysn0"
+    }
+  ],
+  "origin": [
+    0,
+    0
+  ],
+  "schema": "replay-state/v1",
+  "self": [
+    362571.5,
+    -791268,
+    -16199.8
+  ],
+  "self_hp": {
+    "abdomen": [
+      30,
+      30
+    ],
+    "head": [
+      40,
+      40
+    ],
+    "larm": [
+      30,
+      30
+    ],
+    "max_source": "operator_default",
+    "rleg": [
+      30,
+      30
+    ],
+    "seq": 42499,
+    "source": "property_replication",
+    "thorax": [
+      50,
+      50
+    ],
+    "total": [
+      0,
+      100
+    ]
+  },
+  "self_life": {
+    "state": "dead",
+    "status": 2,
+    "seq": 42820,
+    "source": "playerstate",
+    "field": "CurrentCharacterLiveStatus",
+    "spawn_seq": 1007,
+    "generation": 1,
+    "confirmed": true,
+    "dead": true,
+    "downed": false,
+    "raw_status": 2,
+    "raw_seq": 42820,
+    "raw_source": "playerstate",
+    "raw_field": "bDead"
+  },
+  "self_name": "放我一马咩嗫(self)",
+  "self_src": "ch",
+  "self_yaw": 338.90625,
+  "semanticComplete": false,
+  "session": 1,
+  "status": "replay",
+  "timestampMs": 1789875699211
+}
