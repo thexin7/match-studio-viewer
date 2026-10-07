@@ -82,7 +82,7 @@ item_id, grade, price
 
 ### 回放控制
 
-`GET /api/ctrl?pause=1|0&seek=<ms>&speed=<float>` —— 仅在回放模式下有效。
+`GET /api/ctrl?pause=1|0&seek=<0..1000>&speed=<float>` —— 仅在回放模式下有效，`seek` 为进度千分比。
 
 ### 其他端点
 

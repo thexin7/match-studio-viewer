@@ -1,27 +1,27 @@
 {
-  "name": "match-studio-viewer",
-  "version": "0.1.0",
-  "private": false,
-  "description": "浏览器端战术比赛回放查看器（2D 态势图 + 可选 3D 场景）",
-  "type": "module",
-  "scripts": {
-    "dev": "node dev/server.mjs",
-    "start": "node dev/server.mjs"
-  },
-  "engines": {
-    "node": ">=18"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/thexin7/match-studio-viewer.git"
-  },
-  "keywords": [
-    "replay",
-    "viewer",
-    "leaflet",
-    "threejs",
-    "esports",
-    "tactical-map"
-  ]
+    "name": "match-studio-viewer",
+    "version": "0.1.0",
+    "private": false,
+    "description": "浏览器端战术比赛回放查看器（2D 态势图 + 可选 3D 场景）",
+    "type": "module",
+    "scripts": {
+        "dev": "node dev/server.mjs",
+        "start": "node dev/server.mjs"
+    },
+    "engines": {
+        "node": ">=18"
+    },
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/thexin7/match-studio-viewer.git"
+    },
+    "keywords": [
+        "replay",
+        "viewer",
+        "leaflet",
+        "threejs",
+        "esports",
+        "tactical-map"
+    ]
 }

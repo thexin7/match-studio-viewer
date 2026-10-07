@@ -106,9 +106,20 @@ async function metrics(cdp) {
     return Object.fromEntries(list.map(m => [m.name, m.value]));
 }
 
+async function waitForTerrain(cdp) {
+    const deadline = Date.now() + 60000;
+    while (Date.now() < deadline) {
+        const state = await cdp.eval('window.gateway3d?.stat() || null');
+        if (state?.err) throw new Error(state.err);
+        if (state?.mapChunks?.triangles > 0) return;
+        await sleep(250);
+    }
+    throw new Error('3D 地形未在 60 秒内完成装载');
+}
+
 // 采样一个阶段：每秒耗时（毫秒）= 区间内累计耗时差 / 区间秒数
 async function sample(cdp, name, seconds, opt) {
-    await cdp.eval('window.__smokeFrames = 0; (function f(){ window.__smokeFrames++; requestAnimationFrame(f); })(); 0');
+    await cdp.eval('window.__smokeFrames = 0; if (!window.__smokeFrameLoop) { window.__smokeFrameLoop = true; requestAnimationFrame(function f(){ window.__smokeFrames++; requestAnimationFrame(f); }); } 0');
     const a = await metrics(cdp);
     await sleep(seconds * 1000);
     const b = await metrics(cdp);
@@ -136,7 +147,7 @@ async function main() {
         `--window-size=${opt.width},${opt.height}`, '--no-first-run', '--no-default-browser-check',
         '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--mute-audio', 'about:blank',
     ], { stdio: 'ignore' });
-    const errors = [], notFound = new Set();
+    const errors = [], warnings = [], notFound = new Set();
     let code = 0;
     try {
         const targets = await waitJson(`http://127.0.0.1:${opt.port}/json/list`);
@@ -149,6 +160,8 @@ async function main() {
                 errors.push('异常: ' + (d.exception?.description || d.text).split('\n')[0]);
             } else if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
                 errors.push('console.error: ' + msg.params.args.map(a => a.value ?? a.description ?? '').join(' ').slice(0, 300));
+            } else if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'warning' && warnings.length < 50) {
+                warnings.push(msg.params.args.map(a => a.value ?? a.description ?? '').join(' ').slice(0, 300));
             } else if (msg.method === 'Network.responseReceived' && msg.params.response.status === 404) {
                 notFound.add(new URL(msg.params.response.url).pathname.split('/').slice(0, 3).join('/'));
             }
@@ -165,16 +178,19 @@ async function main() {
         await sleep(4000);
         const phases = [];
         phases.push(await sample(cdp, '2d', opt.seconds, opt));
-        await cdp.eval(`document.getElementById('s-3d').click(); 0`);
-        await sleep(5000);
-        phases.push(await sample(cdp, '3d-chase', opt.seconds, opt));
-        await cdp.eval(`document.querySelector('#camseg button[data-cam="fpv"]')?.click(); 0`);
-        await sleep(2500);
-        phases.push(await sample(cdp, '3d-fpv', opt.seconds, opt));
+        const has3d = await cdp.eval('typeof NO3D !== "undefined" && !NO3D');
+        if (has3d) {
+            await cdp.eval(`document.getElementById('s-3d').click(); 0`);
+            await waitForTerrain(cdp);
+            phases.push(await sample(cdp, '3d-chase', opt.seconds, opt));
+            await cdp.eval(`document.querySelector('#camseg button[data-cam="fpv"]')?.click(); 0`);
+            await sleep(2500);
+            phases.push(await sample(cdp, '3d-fpv', opt.seconds, opt));
+        }
         const r3 = await cdp.eval('JSON.stringify(window.gateway3d ? window.gateway3d.stat() : null)');
         code = errors.length ? 1 : 0;
-        console.log(JSON.stringify({ ok: code === 0, url: opt.url, phases, render3d: JSON.parse(r3 || 'null'),
-            errors, notFound: [...notFound].sort() }, null, 2));
+        console.log(JSON.stringify({ ok: code === 0, url: opt.url, phases, skipped3d: !has3d, render3d: JSON.parse(r3 || 'null'),
+            errors, warnings, notFound: [...notFound].sort() }, null, 2));
         cdp.ws.close();
     } catch (e) {
         console.error('冒烟失败:', e.message);

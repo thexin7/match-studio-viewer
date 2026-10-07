@@ -2419,8 +2419,7 @@ async function gwStatus(){
   const now=performance.now(),dt=Math.max(.1,(now-gwRateAt)/1000);
   gwPageFps=gwPageFrames/dt;gwSnapshotHz=gwUiSamples/dt;gwPageFrames=gwUiSamples=0;gwRateAt=now;
   try {
-    const response=await fetch('/api/status',{cache:'no-store'});if(!response.ok)throw Error('HTTP '+response.status);
-    const s=await response.json(),r=s.rates||{},c=s.counts||{},t=s.transport||{},p=s.stats||{};
+    const s=JSON.parse(await apiText('/api/status')),r=s.rates||{},c=s.counts||{},t=s.transport||{},p=s.stats||{};
     $('gateway-rate').textContent=s.semanticComplete===false?'测试版 · 未识别移动槽 '+Number(c.unknownMovementSlots||0)+' · 真实场景待验证':'人物坐标 '+Number(r.characters||0).toFixed(1)+' 样本/秒 · '+(s.replay?.paused?'已暂停':s.replay?'离线回放':'实时解析');
     const render=window.gateway3d?.stat();
     $('gateway-stats').textContent=[
@@ -2441,6 +2440,17 @@ async function gwStatus(){
 // 多用户版与 manager 的 20Hz 视图推进对齐；请求串行，避免慢网络堆积。
 // 数据在变锁 50ms；静止指数回退省流量；后台标签页 1s 省电。
 let lastUiErrorAt=0;
+async function apiText(path) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(new DOMException('请求超时，正在重新连接', 'TimeoutError')), 5000);
+  try {
+    const response = await fetch(path, { cache: 'no-store', signal: controller.signal });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return await response.text();
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 const POLL_FAST = 20, POLL_MAX = 100;
 let pollIv = POLL_FAST, pollBusy = false, _lastBody = "";
 async function poll() {
@@ -2448,14 +2458,11 @@ async function poll() {
   if (!pollBusy) {
     pollBusy = true;
     try {
-      const r = await fetch("/api/state",{cache:"no-store"});
-      if (!r.ok) throw new Error("HTTP " + r.status);
       // 先比原始文本：数据没变就整帧跳过（解析、2D 重绘、3D 推送全省掉）。
       // 以前每 50ms 都 JSON.parse + JSON.stringify 整个快照再全量 draw。
-      const body = await r.text();
+      const body = await apiText('/api/state');
       changed = body !== _lastBody;
       if (changed) {
-        _lastBody = body; gwUiSamples++;
         const s = JSON.parse(body);
         const identities=s.identityRecords||[];const identityText=identities.map(x=>(x.name||'身份待解析')+' · 队伍 '+(x.team??'未知')).join('\n');if($('nova-identities').textContent!==identityText)$('nova-identities').textContent=identityText;
         normalizeNames(s);
@@ -2464,9 +2471,17 @@ async function poll() {
         s.self = normalizeSelf(s.self);   // 自机跳变过滤（2D 标记与 3D 相机共用同一份）
         draw(s);
         if (R3 && is3d()) R3.update(loot3dSnapshot(s));
+        // 渲染失败时保留旧游标，让下一轮重试同一帧。
+        _lastBody = body; gwUiSamples++;
       }
-    } catch (e) { if (performance.now()-lastUiErrorAt>3000) { console.error("页面更新失败", e); toast("页面更新失败："+e.message); lastUiErrorAt=performance.now(); } }
-    pollBusy = false;
+    } catch (e) {
+      if (performance.now()-lastUiErrorAt>3000) {
+        if (e.name === 'TimeoutError' || e.name === 'AbortError') console.warn('状态请求超时，将自动重试', e);
+        else console.error('页面更新失败', e);
+        toast('页面更新失败：'+e.message); lastUiErrorAt=performance.now();
+      }
+    }
+    finally { pollBusy = false; }
   }
   pollIv = document.hidden ? 1000 : (changed ? POLL_FAST : Math.min(pollIv * 1.7 + 1, POLL_MAX));
   setTimeout(poll, pollIv);
@@ -3007,7 +3022,7 @@ async function set3d(on, quiet) {
     if (!m) { toast("该地图暂无 3D 白模"); return; }
     if (!R3) {
       r3Loading(true, 2, "载入 3D 引擎…");
-      const mod = await import(M3D + "korr-adapter.js?v=1.4.0");
+      const mod = await import(M3D + "korr-adapter.js?v=1.4.1");
       R3 = mod.create({
         canvas: $("r3-cv"), labels: $("r3-lbl"), hud: $("r3-hud"),
         mapInfo: MAP_INFO, model: m.rec, pref: PREF,
@@ -3182,7 +3197,8 @@ $("spd").addEventListener("click", ev => {
   replayControl("speed=" + b.dataset.spd);
 });
 $("seek").addEventListener("pointerdown", () => { seeking = true; });
-$("seek").addEventListener("pointerup", () => { seeking = false; replayControl("seek=" + $("seek").value); });
+$("seek").addEventListener("pointerup", () => { seeking = false; });
+$("seek").addEventListener("pointercancel", () => { seeking = false; });
 $("seek").addEventListener("change", () => { seeking = false; replayControl("seek=" + $("seek").value); });
 
 /* --- 战况岛展开 --- */

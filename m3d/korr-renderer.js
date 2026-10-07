@@ -3247,10 +3247,7 @@ function _monitorAutoRenderQuality(now, active) {
         qualityMonitor.lastFrameAt = 0;
         return;
     }
-    if (qualityMonitor.lastFrameAt && now - qualityMonitor.lastFrameAt > 1000) {
-        qualityMonitor.frames = 0;
-        qualityMonitor.sampleStartedAt = now;
-    }
+    // 长帧也必须计入低帧率窗口；切换标签页的间隔由 visibilitychange 重置。
     qualityMonitor.lastFrameAt = now;
     if (now < qualityMonitor.warmupUntil) return;
     if (!qualityMonitor.sampleStartedAt) qualityMonitor.sampleStartedAt = now;
