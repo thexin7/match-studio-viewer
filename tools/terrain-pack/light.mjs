@@ -1,0 +1,41 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { gzipSync } from 'node:zlib';
+import { fileURLToPath } from 'node:url';
+import { readGlb, canonicalize, chunkPositions, chunkIndices, encodePack } from './pack.mjs';
+import { simplifyTerrain } from './simplify.mjs';
+import { upsertPacked } from './manifest.mjs';
+import { decodeTerrainPack, gunzipIfNeeded } from '../../m3d/terrain-packed.js';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../m3d');
+const manifestPath = path.join(root, 'manifest.json');
+const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+const arg = process.argv[2];
+if (!arg || (arg !== '--all' && !manifest.maps[arg])) throw new Error('用法：node tools/terrain-pack/light.mjs <地图 key | --all>');
+for (const key of arg === '--all' ? Object.keys(manifest.maps) : [arg]) {
+  const rec = manifest.maps[key];
+  if (!rec.packed || rec.packed.src_rev !== rec.rev) throw new Error(key + ' 的原始 TPK 缺失或过期');
+  const chunks = canonicalize(readGlb(fs.readFileSync(path.join(root, rec.file))).chunks);
+  const source = decodeTerrainPack(await gunzipIfNeeded(fs.readFileSync(path.join(root, rec.packed.file))));
+  const position = chunkPositions(chunks), index = chunkIndices(chunks);
+  if (position.length !== source.position.length || index.length !== source.index.length) throw new Error(key + ' 的原始 TPK 与 GLB 不匹配');
+  for (let i = 0; i < position.length; i++) if (position[i] !== source.position[i]) throw new Error(key + ' 的原始顶点不一致');
+  for (let i = 0; i < index.length; i++) if (index[i] !== source.index[i]) throw new Error(key + ' 的原始索引不一致');
+  const light = await simplifyTerrain(chunks, source.bake);
+  const enc = encodePack(light.chunks, light.bake, { key, src_rev: rec.rev, generator: 'meshoptimizer-1.3.0', error_m: light.maxError, lock_border: true });
+  const data = gzipSync(enc.payload, { level: 9 });
+  const check = decodeTerrainPack(await gunzipIfNeeded(data));
+  const expectedPosition = chunkPositions(light.chunks), expectedIndex = chunkIndices(light.chunks);
+  if (check.position.length !== expectedPosition.length || check.index.length !== expectedIndex.length) throw new Error('轻量包长度校验失败');
+  for (let i = 0; i < expectedPosition.length; i++) if (check.position[i] !== expectedPosition[i]) throw new Error('轻量包坐标校验失败');
+  for (let i = 0; i < expectedIndex.length; i++) if (check.index[i] !== expectedIndex[i]) throw new Error('轻量包索引校验失败');
+  if (light.bake) for (let i = 0; i < light.bake.length; i++) if (check.bake[i] !== light.bake[i]) throw new Error('轻量包烘焙校验失败');
+  const rev = crypto.createHash('sha256').update(data).digest('hex').slice(0, 16);
+  const file = `${key}.light.${rev}.tpk`;
+  fs.writeFileSync(path.join(root, file), data);
+  const packed = { file, rev, src_rev: rec.rev, format: 'mstp1', bytes: data.length, raw: enc.payload.length, tris: check.tris, verts: check.verts, chunks: light.chunks.length, bake: !!light.bake, error_m: light.maxError, lock_border: true };
+  const text = fs.readFileSync(manifestPath, 'utf8');
+  fs.writeFileSync(manifestPath, upsertPacked(text, key, packed, 'packed_light'));
+  console.log(JSON.stringify({ key, fullTriangles: source.tris, lightTriangles: check.tris, fullBytes: rec.packed.bytes, lightBytes: data.length, errorMeters: light.maxError, bake: !!light.bake }));
+}

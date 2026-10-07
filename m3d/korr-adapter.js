@@ -112,24 +112,27 @@ async function readWithProgress(response,progress){
    manifest 没有 packed、包与当前 GLB 版本不符、浏览器不支持解压或下载/解码失败时返回 null，由调用方回退原 GLB。
    bake：Uint8 normalized、itemSize 2，R = AO（1 = 无遮挡），G = 天空可见度（1 = 头顶是天空）。 */
 async function loadPackedGeometry(job){
-  const rec=job.model,pk=rec?.packed;
-  if(!pk?.file || (pk.src_rev && rec.rev && pk.src_rev!==rec.rev) || typeof DecompressionStream!=='function')return null;
-  try{
-    const url=new URL(pk.file+'?v='+encodeURIComponent(pk.rev || pk.bytes || 1),new URL(job.url,location.href)).href;
-    const t0=performance.now();
-    const pack=await loadTerrainPack(url,job.progress,job.controller.signal);
-    const g=new THREE.BufferGeometry();
-    g.setAttribute('position',new THREE.BufferAttribute(pack.position,3));
-    g.setIndex(new THREE.BufferAttribute(pack.index,1));
-    if(pack.bake)g.setAttribute('bake',new THREE.BufferAttribute(pack.bake,2,true));
-    g.userData.terrainSource={kind:'packed',url,bytes:pk.bytes,verts:pack.verts,tris:pack.tris,bake:!!pack.bake};
-    console.log(`[Radar3D] 地形包 ${pk.file} 已解码：${pack.verts} 顶点 / ${pack.tris} 面，bake=${!!pack.bake}，${Math.round(performance.now()-t0)}ms`);
-    return g;
-  }catch(e){
-    if(job.controller.signal.aborted)throw e;
-    console.warn('[Radar3D] 地形包加载失败，回退 GLB：',e);
-    return null;
+  const rec=job.model;
+  if(typeof DecompressionStream!=='function')return null;
+  for(const pk of [rec?.packed,rec?.packed_fallback]){
+    if(!pk?.file || (pk.src_rev && rec.rev && pk.src_rev!==rec.rev))continue;
+    try{
+      const url=new URL(pk.file+'?v='+encodeURIComponent(pk.rev || pk.bytes || 1),new URL(job.url,location.href)).href;
+      const t0=performance.now();
+      const pack=await loadTerrainPack(url,job.progress,job.controller.signal);
+      const g=new THREE.BufferGeometry();
+      g.setAttribute('position',new THREE.BufferAttribute(pack.position,3));
+      g.setIndex(new THREE.BufferAttribute(pack.index,1));
+      if(pack.bake)g.setAttribute('bake',new THREE.BufferAttribute(pack.bake,2,true));
+      g.userData.terrainSource={kind:'packed',url,bytes:pk.bytes,verts:pack.verts,tris:pack.tris,bake:!!pack.bake};
+      console.log(`[Radar3D] 地形包 ${pk.file} 已解码：${pack.verts} 顶点 / ${pack.tris} 面，bake=${!!pack.bake}，${Math.round(performance.now()-t0)}ms`);
+      return g;
+    }catch(e){
+      if(job.controller.signal.aborted)throw e;
+      console.warn('[Radar3D] 地形包加载失败，尝试回退资源：',e);
+    }
   }
+  return null;
 }
 
 let initialized=false;
@@ -144,7 +147,7 @@ export function create(options) {
   gateway.setHud(options.hud || null);
   let latest=null,pref=options.pref || {},active=true;
   const presenter=new PosePresenter();
-  let statError='',mapUrl='',pendingMap=null,loading=null,loadingJob=null,followKey='__self',applyingCamera=false;
+  let statError='',mapUrl='',pendingMap=null,loading=null,loadingJob=null,terrainSource=null,followKey='__self',applyingCamera=false;
   const adapter={camMode:'chase',onCam:null,
     update(s){
       latest=s;presenter.push(s,performance.now());
@@ -161,7 +164,7 @@ export function create(options) {
       if(latest){window.AppState.gameData=toKorr(presenter.sample(performance.now()),pref);window.AppState.frameCount++;}},
     setActive(on){active=on;window.viewMode=on?'3d':'2d';window.dispatchEvent(new CustomEvent('viewModeChanged',{detail:window.viewMode}));},
     resize(){gateway.resize();},
-    stat(){return {...gateway.stat(),err:statError,engine:'Korr/Three.js',interpolation:'human-only',source:latest?.cursor,expectedCharacters:window.AppState.gameData?.players.length||0};},
+    stat(){return {...gateway.stat(),terrain:terrainSource,err:statError,engine:'Korr/Three.js',interpolation:'human-only',source:latest?.cursor,expectedCharacters:window.AppState.gameData?.players.length||0};},
     setQuality(q){window.radar3dSetQuality(({perf:'performance',low:'performance',mid:'balanced',high:'high'})[q] || q || 'auto');},
     setCam(mode){applyingCamera=true;
       try{
@@ -177,10 +180,10 @@ export function create(options) {
     focus(key,s){const e=key==='__self'?{world:s.self}:s.entities.find(x=>x.key===key);
       if(e?.world){window.radar3dSetCameraMode('free');window.radar3dFocus(key==='__self'?'self':'player',...e.world,key);this.camMode='orbit';}},
     async setMap(info,url,progress,model){
-      pendingMap={info,url,progress,model};
-      if(loadingJob && loadingJob.url!==url)loadingJob.controller.abort();
+      pendingMap={info,url,progress,model,cacheKey:url+'|'+(model?.packed?.rev || model?.packed?.file || '')};
+      if(loadingJob && loadingJob.cacheKey!==pendingMap.cacheKey)loadingJob.controller.abort();
       if(loading)return loading;
-      loading=(async()=>{while(pendingMap){const job=pendingMap;pendingMap=null;if(job.url===mapUrl)continue;
+      loading=(async()=>{while(pendingMap){const job=pendingMap;pendingMap=null;if(job.cacheKey===mapUrl)continue;
         job.controller=new AbortController();loadingJob=job;
         statError='';try{
           let geometry=await loadPackedGeometry(job);
@@ -192,7 +195,8 @@ export function create(options) {
           if(job.controller.signal.aborted){geometry.dispose();continue;}
           // 装图是异步的（Worker 切块）：等它完成，失败才能进 statError，载入提示也不会提前消失
           await gateway.installGeometry(job.info?.key || 'local',geometry);
-          mapUrl=job.url;
+          mapUrl=job.cacheKey;
+          terrainSource=geometry.userData?.terrainSource || {kind:'glb',url:job.url};
           if(['orbit','top'].includes(adapter.camMode) || !latest?.self)gateway.fit();
         }catch(e){if(!job.controller.signal.aborted){statError=String(e.message || e);options.onToast?.('3D 地图加载失败：'+statError);}}
         finally{loadingJob=null;}

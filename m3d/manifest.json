@@ -77,6 +77,20 @@
           "ao_dist_m": 10,
           "sky_dist_m": 400
         }
+      },
+      "packed_light": {
+        "file": "az3.light.88ae949257ac69c0.tpk",
+        "rev": "88ae949257ac69c0",
+        "src_rev": "0ab76c3b979e35b8",
+        "format": "mstp1",
+        "bytes": 29612292,
+        "raw": 63514985,
+        "tris": 6905493,
+        "verts": 5136596,
+        "chunks": 330,
+        "bake": true,
+        "error_m": 0.04999866709113121,
+        "lock_border": true
       }
     },
     "bks": {
@@ -155,6 +169,20 @@
           "ao_dist_m": 10,
           "sky_dist_m": 400
         }
+      },
+      "packed_light": {
+        "file": "bks.light.a0c0160af193ca35.tpk",
+        "rev": "a0c0160af193ca35",
+        "src_rev": "0371649608e61ef4",
+        "format": "mstp1",
+        "bytes": 15018991,
+        "raw": 30101549,
+        "tris": 3283455,
+        "verts": 2422238,
+        "chunks": 139,
+        "bake": true,
+        "error_m": 0.049998942762613297,
+        "lock_border": true
       }
     },
     "cgxg": {
@@ -233,6 +261,20 @@
           "ao_dist_m": 10,
           "sky_dist_m": 400
         }
+      },
+      "packed_light": {
+        "file": "cgxg.light.49cd77bcfb1da849.tpk",
+        "rev": "49cd77bcfb1da849",
+        "src_rev": "a06b48ce4803f563",
+        "format": "mstp1",
+        "bytes": 24235031,
+        "raw": 44463448,
+        "tris": 5346807,
+        "verts": 3339770,
+        "chunks": 488,
+        "bake": true,
+        "error_m": 0.04999970272183418,
+        "lock_border": true
       }
     },
     "cxjy": {
@@ -311,6 +353,20 @@
           "ao_dist_m": 10,
           "sky_dist_m": 400
         }
+      },
+      "packed_light": {
+        "file": "cxjy.light.95522cb2b79f7e07.tpk",
+        "rev": "95522cb2b79f7e07",
+        "src_rev": "a21a53fc4bd9e0f8",
+        "format": "mstp1",
+        "bytes": 19701738,
+        "raw": 43432579,
+        "tris": 4673072,
+        "verts": 3517119,
+        "chunks": 132,
+        "bake": true,
+        "error_m": 0.04999883845448494,
+        "lock_border": true
       }
     },
     "daba": {
@@ -389,6 +445,20 @@
           "ao_dist_m": 10,
           "sky_dist_m": 400
         }
+      },
+      "packed_light": {
+        "file": "daba.light.3fd2e3cc5dbb4678.tpk",
+        "rev": "3fd2e3cc5dbb4678",
+        "src_rev": "25efaea6a4a25c3c",
+        "format": "mstp1",
+        "bytes": 17187405,
+        "raw": 31829675,
+        "tris": 3775779,
+        "verts": 2471509,
+        "chunks": 226,
+        "bake": true,
+        "error_m": 0.04999988153576851,
+        "lock_border": true
       }
     },
     "htjd": {
@@ -467,6 +537,20 @@
           "ao_dist_m": 10,
           "sky_dist_m": 400
         }
+      },
+      "packed_light": {
+        "file": "htjd.light.6886f26bfbd16107.tpk",
+        "rev": "6886f26bfbd16107",
+        "src_rev": "db39b5e505b6fe28",
+        "format": "mstp1",
+        "bytes": 11652574,
+        "raw": 23554561,
+        "tris": 2625975,
+        "verts": 1895613,
+        "chunks": 162,
+        "bake": true,
+        "error_m": 0.049999307841062546,
+        "lock_border": true
       }
     }
   },

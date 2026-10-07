@@ -41,6 +41,23 @@ node dev/poi-check.mjs
 node dev/smoke.mjs --url http://127.0.0.1:5173/ --map az3 --quality perf --size 390x844
 ```
 
+### 路由器部署的轻量地形
+
+模型处理只在开发机执行。路由器继续提供静态文件，不需要 Node.js、WASM 简化器或新的服务。
+
+```bash
+npm ci
+node tools/terrain-pack/validate.mjs
+node tools/terrain-pack/light.mjs --all
+node --test dev/terrain-light.test.mjs
+```
+
+`validate.mjs` 使用 Khronos glTF-Validator，发现错误时退出码为 1。现有原始 GLB 的 int16 POSITION 存在 4 字节对齐规范问题；报告不会静默忽略这些错误。该校验不判断地形拼接的视觉质量。
+
+`light.mjs` 使用固定版本 meshoptimizer 离线生成 `packed_light`：锁定拓扑边界，以 50% 面数为目标、0.05 米算法误差为上限，同时考虑 AO/天空可见度属性。保留的顶点坐标不移动，烘焙数据随顶点重排；每个产物都用浏览器解码器回读核对。受边界和属性约束，实际面数不保证达到 50%。
+
+自动、流畅、平衡档优先使用版本匹配的轻量包；高清档使用完整包。轻量包下载失败会依次尝试完整 TPK 和原始 GLB。更换 GLB 或重新烘焙后，需要重新生成轻量包。原始 GLB、完整包均保留；轻量处理不会自动修复原地形中的拼接接缝。
+
 ## 架构
 
 ```

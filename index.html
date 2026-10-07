@@ -2780,7 +2780,7 @@ bindSlider("s-warnsz", "warnsz", v => v + "%");
   seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     setPref("q3d", b.dataset.q);
     sync();
-    if (R3) R3.setQuality(PREF.q3d);
+    if (R3) { R3.setQuality(PREF.q3d); r3SwitchMap(); }
   }));
   sync();
 })();
@@ -2964,9 +2964,16 @@ function r3Loading(on, pct, txt) {
   if (txt) $("r3-load-t").textContent = txt;
   $("r3-bar").firstElementChild.style.width = Math.max(0, Math.min(100, pct || 0)) + "%";
 }
+function r3TerrainRecord(rec, quality) {
+  const light = rec?.packed_light;
+  if (quality !== 'high' && light?.file && light.src_rev === rec.rev) {
+    return { ...rec, packed: light, packed_fallback: rec.packed };
+  }
+  return rec;
+}
 async function r3Model(k = (MAP_INFO && MAP_INFO.key) || DEF_MAP) {
   const mf = await r3Manifest();
-  const rec = mf.maps && mf.maps[k];
+  const rec = r3TerrainRecord(mf.maps && mf.maps[k], PREF.q3d);
   if (!rec) return null;
   // GLB 长缓存必须带内容版本；只换同名文件时，force-cache 会在
   // max-age 内直接命中旧模型，ETag 根本没有机会参与重验证。
@@ -3031,7 +3038,7 @@ async function set3d(on, quiet) {
     if (!m) { toast("该地图暂无 3D 白模"); return; }
     if (!R3) {
       r3Loading(true, 2, "载入 3D 引擎…");
-      const mod = await import(M3D + "korr-adapter.js?v=1.4.2");
+      const mod = await import(M3D + "korr-adapter.js?v=1.5.0");
       R3 = mod.create({
         canvas: $("r3-cv"), labels: $("r3-lbl"), hud: $("r3-hud"),
         mapInfo: MAP_INFO, model: m.rec, pref: PREF,

@@ -23,5 +23,9 @@
         "threejs",
         "esports",
         "tactical-map"
-    ]
+    ],
+    "devDependencies": {
+        "gltf-validator": "2.0.0-dev.3.10",
+        "meshoptimizer": "1.3.0"
+    }
 }

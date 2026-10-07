@@ -34,7 +34,8 @@ function scan(text) {
   return spans;
 }
 
-export function upsertPacked(text, key, packed) {
+export function upsertPacked(text, key, packed, field = 'packed') {
+  if (!['packed', 'packed_light'].includes(field)) throw new Error('不支持的地形清单字段');
   const eol = text.includes('\r\n') ? '\r\n' : '\n';
   const spans = scan(text);
   const obj = spans.get('/maps/' + key);
@@ -43,10 +44,10 @@ export function upsertPacked(text, key, packed) {
   const firstLine = text.slice(obj[0], obj[1]).split(/\r?\n/)[1] || '      ';
   const indent = firstLine.match(/^\s*/)[0];
   const body = JSON.stringify(packed, null, 2).split('\n').map((l, n) => (n ? indent + l : l)).join(eol);
-  const old = spans.get(`/maps/${key}/packed`);
+  const old = spans.get(`/maps/${key}/${field}`);
   if (old) return text.slice(0, old[0]) + body + text.slice(old[1]);
   // 插在对象的右花括号前：回退到最后一个非空白字符之后
   let at = obj[1] - 1;
   while (at > obj[0] && /\s/.test(text[at - 1])) at--;
-  return text.slice(0, at) + ',' + eol + indent + '"packed": ' + body + text.slice(at);
+  return text.slice(0, at) + ',' + eol + indent + JSON.stringify(field) + ': ' + body + text.slice(at);
 }
