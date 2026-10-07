@@ -7,6 +7,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createStudioAPI } from './studio-api.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
@@ -205,18 +206,25 @@ function handleApi(req, res, url) {
   }
 }
 
+const studioAPI = createStudioAPI();
 const server = http.createServer((req, res) => {
+  const url = new URL(req.url, `http://${req.headers.host}`);
+  if (url.pathname === '/api/studio') {
+    studioAPI(req, res, fs.existsSync(path.join(ROOT, 'm3d/manifest.json')));
+    return;
+  }
   if (req.method !== 'GET' && req.method !== 'HEAD') {
     res.writeHead(405, { Allow: 'GET, HEAD' });
     res.end('Method not allowed');
     return;
   }
 
-  const url = new URL(req.url, `http://${req.headers.host}`);
   if (handleApi(req, res, url) !== false) return;
 
   let rel = url.pathname;
   if (rel === '/' || rel === '/index.html') rel = '/index.html';
+  else if (rel === '/studio' || rel === '/studio/') rel = '/ui/studio/index.html';
+  else if (/^\/overlay(?:\/(?:status|alert|radar|threats|observer|ticker|minimap)?)?$/.test(rel)) rel = '/ui/studio/overlay.html';
   else rel = rel.replace(/^\//, '');
 
   const abs = safePath('/' + rel);

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark"><title>Match Studio · 导播控制台</title><link rel="icon" href="data:,">
+<link rel="stylesheet" href="/ui/studio/console.css?v=1.0.2"></head>
+<body><header class="topbar"><div class="brand"><a href="/">Match Studio</a><span>· 导播控制台</span><small class="private-badge">控制界面</small><select id="map-select" aria-label="选择地图"><option value="">载入地图…</option></select></div><div class="connection"><i id="connection-dot"></i><span id="connection">正在连接</span><span id="source-mode">等待数据</span><a href="/" target="_blank" rel="noopener">打开查看器 ↗</a></div></header>
+<main class="console-grid">
+  <div class="column">
+    <section class="panel"><header><h1>快捷控制</h1><span>点按即切换</span></header><div id="deck" class="deck"></div></section>
+    <section class="panel hotkeys"><header><h2>热键</h2><span>控制台聚焦时生效</span></header><dl><div><dt>第一 / 第三 / 自由 / 俯视</dt><dd>F1 / F2 / F3 / F4</dd></div><div><dt>上一个 / 下一个观察对象</dt><dd>[ / ]</dd></div><div><dt>跟随最近对手</dt><dd>N</dd></div><div><dt>贴近提醒 / 提示音</dt><dd>A / S</dd></div><div><dt>小地图 / 对手列表</dt><dd>M / T</dd></div><div><dt>切换叠加层布局</dt><dd>L</dd></div><div><dt>显示 / 隐藏叠加层</dt><dd>Ctrl+Shift+O</dd></div></dl><p class="note">OBS 中添加浏览器源即可使用透明叠加层。提示音从本控制台播放。</p></section>
+    <section class="panel" id="replay-panel" hidden><header><h2>回放控制</h2><span id="replay-time">--:-- / --:--</span></header><div class="replay-actions"><button id="replay-play">暂停</button><input id="replay-seek" type="range" min="0" max="1000" value="0" aria-label="回放进度"><select id="replay-speed" aria-label="回放速度"><option value="0.5">0.5×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></div></section>
+  </div>
+  <div class="column">
+    <section class="panel"><header><h2>观察对象</h2><span id="people-count">等待数据</span></header><div id="people" class="people"><p class="empty">等待比赛数据…</p></div></section>
+    <section class="panel"><header><h2>叠加层布局</h2><span>L 键循环切换</span></header><div class="layouts" id="layouts"><button data-layout="corner"><span class="layout-thumbnail corner"><i></i><b></b><em></em></span>角落</button><button data-layout="bar"><span class="layout-thumbnail bar"><i></i><b></b><em></em></span>底栏</button><button data-layout="vertical"><span class="layout-thumbnail vertical"><i></i><b></b><em></em></span>竖屏</button><button data-layout="map"><span class="layout-thumbnail fullmap"><i></i><b></b><em></em></span>全屏地图</button></div><p class="note" id="source-size">OBS → 来源 → 浏览器，宽 1920 高 1080</p><div class="copy-field"><input id="source-url" readonly aria-label="浏览器源地址"><button id="copy-source"><img src="/ui/studio/assets/copy.svg" alt="">复制</button></div><div class="source-links"><a id="open-overlay" href="/overlay?transparent=0" target="_blank" rel="noopener">打开叠加层 ↗</a><button id="copy-part">复制单独组件地址</button></div><select id="part-select" aria-label="叠加层组件"><option value="status">状态条 · 自动宽 × 52</option><option value="alert">接近警报 · 780 × 170</option><option value="radar">方位雷达 · 240 × 260</option><option value="threats">对手列表 · 360 × 262</option><option value="observer">观察对象 · 560 × 139</option><option value="ticker">接近提醒 · 1360 × 56</option><option value="minimap">小地图 · 360 × 240</option></select></section>
+    <section class="panel"><header><h2>最近提醒</h2><span>基于已收到的坐标</span></header><div id="events" class="events"><p class="empty">等待距离变化…</p></div></section>
+  </div>
+  <div class="column">
+    <section class="preview-wrap" aria-label="输出预览"><div class="preview-label"><i></i><span id="preview-label">叠加层预览</span></div><div class="preview-stage"><iframe id="preview-viewer" src="/?studio-preview=1" title="查看器实时预览" tabindex="-1"></iframe><iframe id="preview-overlay" src="/overlay?transparent=1" title="透明叠加层实时预览" tabindex="-1"></iframe></div><div class="preview-footer"><span>实时预览</span><button id="preview-toggle" aria-pressed="false">透明背景</button></div></section>
+    <section class="panel settings"><header><h2>设置</h2><span>实时同步到查看器与叠加层</span></header><div id="settings"></div></section>
+  </div>
+</main><div id="notice" role="status" aria-live="polite" hidden></div><script type="module" src="/ui/studio/console.js?v=1.0.2"></script></body></html>

@@ -1,0 +1,17 @@
+/* Shared G visual language; preserve the map-first viewer layout and its responsive drawers. */
+:root{--glass:#151922eb;--glass-hi:#ffffff0a;--hair:#ffffff17;--r-lg:14px;--r-md:10px;--r-sm:6px}
+body:not(.panels-light) #dock,body:not(.panels-light) #roster{background:#151922ed;border-color:#ffffff17;border-radius:14px;box-shadow:0 12px 32px #0004}
+body:not(.panels-light) .dock-tabs{background:#10141c;border-color:#ffffff12}
+body:not(.panels-light) .dock-tabs button{color:#8c96a6;border-radius:8px}
+body:not(.panels-light) .dock-tabs button[aria-selected=true]{background:#fff;color:#111722;border-color:white;box-shadow:none}
+body:not(.panels-light) #dock .dock-controls,body:not(.panels-light) #dock .dock-switches .row{background:#1c212b;border-color:#ffffff0d}
+body:not(.panels-light) #dock .row-t,body:not(.panels-light) #dock .dock-page h2{color:#e9edf3}
+body:not(.panels-light) #dock .row-s,body:not(.panels-light) .dock-group h3,body:not(.panels-light) .dock-page-head p{color:#8c96a6}
+body:not(.panels-light) #dock .sw.on{background:white;border-color:white}body:not(.panels-light) #dock .sw.on:after{background:#151922}
+#island{background:#0b0e14cc;border-color:#ffffff33}#viewswitch,#camseg,#playbar{background:#151922e8;border:1px solid #ffffff20;border-radius:10px}
+#viewswitch .vs.on,#camseg button.on{background:white;color:#10141c;box-shadow:none}#viewswitch .vs.on svg{stroke:#10141c}
+#roster .op.sel{background:#ff2d3f12;border-color:#ff2d3f70;border-radius:7px}#roster .op{border-radius:6px}
+#studio-entry{position:fixed;left:16px;bottom:18px;z-index:1005;display:flex;align-items:center;gap:10px;text-decoration:none;font:700 12px Arial,'Microsoft YaHei',sans-serif;color:white;background:#151922ed;border:1px solid #ffffff25;padding:9px 12px;border-radius:8px;box-shadow:0 4px 16px #0004}
+#studio-entry span{font-size:10px;font-weight:400;color:#ced5df}body:not(.dock-hidden) #studio-entry{left:calc(var(--tools-w) + 28px)}#studio-entry:hover{border-color:#ffffff60}#studio-entry:focus-visible{outline:2px solid #ffd400;outline-offset:3px}
+body.studio-preview> :not(#map):not(#r3):not(#r3-load){display:none!important}body.studio-preview #map.mini{display:none!important}body.studio-map #map{display:block!important;left:0!important;top:0!important;right:0!important;bottom:0!important;width:100%!important;height:100%!important;border-radius:0!important}body.studio-map .leaflet-control{display:none}
+@media(max-width:900px){#studio-entry,body:not(.dock-hidden) #studio-entry{left:8px;bottom:70px;padding:7px 9px}#studio-entry>span{font-size:10px}}

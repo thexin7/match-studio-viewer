@@ -689,6 +689,7 @@ body.mode3d .leaflet-control-zoom{display:none!important}
 }
 </style>
 <link rel="stylesheet" href="/ui/shubao.css?v=1.4.0">
+<link rel="stylesheet" href="/ui/studio/viewer.css?v=1.0.2">
 <script src="/ui/dock.js?v=1.4.0" defer></script>
 </head>
 <body>
@@ -710,6 +711,7 @@ body.mode3d .leaflet-control-zoom{display:none!important}
 </div>
 
 <div id="hud">加载中…</div>
+<a id="studio-entry" href="/studio" target="_blank" rel="noopener">Match Studio <span>导播控制台 ↗</span></a>
 <div id="scrim-t"></div>
 <div id="scrim-b"></div>
 
@@ -995,6 +997,8 @@ body.mode3d .leaflet-control-zoom{display:none!important}
    ========================================================================== */
 const $ = (id) => document.getElementById(id);
 const MOBILE = () => window.matchMedia("(max-width:900px)").matches;
+const STUDIO_MAP = new URLSearchParams(location.search).has('overlay-map');
+const STUDIO_EMBED = STUDIO_MAP || new URLSearchParams(location.search).has('studio-preview');
 
 /* ------------------------------------------------------------- 偏好存储 */
 // 所有开关走同一套读写，避免各处散落 localStorage 键名。
@@ -1026,7 +1030,8 @@ for (const k in PREF_DEF) {
   const v = localStorage.getItem("nr2_" + k);
   PREF[k] = (v === null) ? PREF_DEF[k] : (isNaN(v) || v === "" ? v : Number(v));
 }
-function setPref(k, v) { PREF[k] = v; try { localStorage.setItem("nr2_" + k, v); } catch (e) {} }
+if (STUDIO_EMBED) Object.assign(PREF, PREF_DEF);
+function setPref(k, v) { PREF[k] = v; if (!STUDIO_EMBED) { try { localStorage.setItem("nr2_" + k, v); } catch (e) {} } }
 // V5.1.5+ removes the ambiguous old "follow" entry; migrate it to third-person follow.
 if (PREF.cam3d === "follow") setPref("cam3d", "chase");
 
@@ -2407,7 +2412,7 @@ fetch("/api/map").then(r => r.json()).then(info => {
     const c = ev.target.closest(".mcard");
     if (c) { setMap(c.dataset.k); closeSheet(); }
   });
-  const want = (PREF.mapkey && MAPS[PREF.mapkey]) ? PREF.mapkey : DEF_MAP;
+  const want = STUDIO_EMBED ? DEF_MAP : (PREF.mapkey && MAPS[PREF.mapkey]) ? PREF.mapkey : DEF_MAP;
   setMap(want, true);
   map.on("dragstart", () => { if (follow) setFollow(false); });
   map.on("zoomend", poiApplyZoom);   // 点位按缩放分级显隐
@@ -3235,6 +3240,42 @@ window.addEventListener("resize", () => {
   }
   if (map) map.invalidateSize();
 });
+// The console uses this narrow adapter; the renderer and all existing controls
+// retain their own state and coordinate conventions.
+window.matchStudio = {
+  read() {
+    return { ready: !!map && !!MAP_INFO, view: is3d() ? '3d' : '2d', camera: R3?.camMode || PREF.cam3d,
+      observer: followKey, map: MAP_INFO?.key || '', prefs: { ...PREF } };
+  },
+  async apply(control, mapOnly = false) {
+    if (!map || !MAP_INFO) return false;
+    if (control.map && MAPS[control.map] && control.map !== MAP_INFO.key) setMap(control.map, true);
+    const preferences = mapOnly ? { ...control.prefs, name:0, wpn:0, gear:0, hp:0, dist:0, ai:0, loot:0, box:0, container:0, poibox:0, poispawn:0, poiexit:0, foe:0, trail:0 } : control.prefs || {};
+    let changed = false;
+    for (const [key, value] of Object.entries(preferences)) {
+      if (!(key in PREF_DEF) || PREF[key] === value) continue;
+      setPref(key, value); changed = true;
+      const el = $('s-' + key);
+      if (el?.matches('input[type=range]')) { el.value = value; el.dispatchEvent(new Event('input')); }
+      else if (el?.classList.contains('sw')) el.classList.toggle('on', !!value);
+    }
+    document.body.classList.toggle('panels-light', PREF.paneltheme === 'light');
+    for (const [id, key, attr] of [['mapstyle3dseg','mapstyle3d','style'],['model3dseg','model3d','model'],['q3dseg','q3d','q'],['shadow3dseg','shadow3d','shadow'],['fpscapseg','fpscap','f'],['panelthemeseg','paneltheme','theme']]) {
+      $(id)?.querySelectorAll('button').forEach(b => b.classList.toggle('on', String(b.dataset[attr]) === String(PREF[key])));
+    }
+    if (changed) { purge(); if (lastSnap) draw(lastSnap); poiApplyZoom(); }
+    if (control.observer && control.observer !== followKey) {
+      followKey = control.observer; sel = followKey === '__self' ? null : followKey;
+      R3?.setFollowKey(followKey); setFollow(true, false); _rc.roster = ''; _rc.icon.clear();
+    }
+    if (!mapOnly) setPref('cam3d', control.camera || PREF.cam3d);
+    await set3d(mapOnly ? false : control.view === '3d', true);
+    if (R3 && !mapOnly) { R3.setPrefs(PREF); R3.setQuality(PREF.q3d || 'auto'); R3.setFollowKey(followKey); if (R3.camMode !== control.camera) R3.setCam(control.camera || 'chase'); r3CamSync(); }
+    if (lastSnap) { draw(lastSnap); if (R3 && is3d()) R3.update(loot3dSnapshot(lastSnap)); }
+    map.invalidateSize(); return true;
+  },
+};
 </script>
+<script type="module" src="/ui/studio/viewer-bridge.js?v=1.0.2"></script>
 </body>
  </html>

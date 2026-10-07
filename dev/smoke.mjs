@@ -11,6 +11,7 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const HELP = `用法: node dev/smoke.mjs [选项]
 
@@ -218,4 +219,5 @@ async function main() {
     return code;
 }
 
-process.exit(await main());
+export { Cdp, findChrome, waitJson, sleep };
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) process.exit(await main());

@@ -58,7 +58,32 @@ node --test dev/terrain-light.test.mjs
 
 自动、流畅、平衡档优先使用版本匹配的轻量包；高清档使用完整包。轻量包下载失败会依次尝试完整 TPK 和原始 GLB。更换 GLB 或重新烘焙后，需要重新生成轻量包。原始 GLB、完整包均保留；轻量处理不会自动修复原地形中的拼接接缝。
 
-## 架构
+## 导播控制台与透明叠加层
+
+打开 `/studio` 使用 G 风格的导播控制台。原查看器 `/` 保留地图主界面，并提供控制台入口。
+
+- 控制台支持观察对象、最近对手、2D / 3D 和相机模式、已有显示设置及回放控制。
+- `/overlay?transparent=1` 是 OBS 浏览器源地址；`transparent=0` 显示检查透明区域的棋盘格。
+- 角落、底栏、全屏地图使用 1920×1080；竖屏使用 1080×1920。切换横竖屏后，需要在 OBS 浏览器源属性中修改宽高。
+- `/overlay/status`、`/overlay/alert`、`/overlay/radar`、`/overlay/threats`、`/overlay/observer`、`/overlay/ticker`、`/overlay/minimap` 可分别作为独立组件源。控制台可复制地址，并显示所需尺寸。
+- 地址省略 `layout` 时跟随控制台；也可通过 `layout=corner|bar|vertical|map` 固定某个源的布局。
+
+页面只显示接口中已有的数据。距离按 UE 厘米换算；方位相对于观察对象的朝向，缺少朝向时显示未知。附近对手按已有队伍信息区分；观察对象消失或数据断开后清空旧信息。接近提醒来自连续快照中的距离变化，回放跳转会重置提醒历史。人数表示已识别单位，不代表全场存活总人数。
+
+本版没有 OBS 场景遥控、录制高光、后台全局热键、击杀播报和墙后判定。热键仅在控制台获得焦点时生效，输入控件保留原有按键行为。提示音需先在控制台手动开启。
+
+宿主需实现 `GET/HEAD/POST /api/studio`：GET 返回带 `revision` 的共享控制状态和 `has3d` 能力；POST 提交 `revision` 与要变更的字段，版本冲突返回 409，无效字段返回 400。`prefs` 按字段合并。浏览器串行提交，并在一次版本冲突后读取新状态重试。设置保存在宿主当前进程会话中，重启宿主后重置；原查看器的本地偏好仍保留。不同浏览器/OBS 配置可共用控制状态，嵌入预览不会覆盖普通查看器的本地偏好。
+
+独立开发服务器提供同样的共享控制接口。浏览器联调检查需要包含可用人物及附近对手的回放/样例数据：
+
+```bash
+node --test dev/studio.test.mjs dev/studio-api.test.mjs dev/maps.test.mjs dev/poll.test.mjs dev/quality.test.mjs dev/smoke.test.mjs
+node dev/studio-smoke.mjs http://127.0.0.1:5173
+```
+
+设计依据：[Figma G · OBS 叠加层](https://www.figma.com/design/LINb0twz3q3Ajdc7ZUG2C3?node-id=36-655)。实际采用 G3 的面板/控件视觉、G1 的横屏安全区和 G4 的竖屏布局；按现有数据能力删减功能。导出图标保存在 `ui/studio/assets/`，不依赖临时 Figma URL。
+
+## 数据流
 
 ```
 浏览器 UI  ──轮询──▶  GET /api/state
