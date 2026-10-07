@@ -60,7 +60,24 @@
         80999.179688,
         80831.398438
       ],
-      "terrain_sample_stride_bytes": 4
+      "terrain_sample_stride_bytes": 4,
+      "packed": {
+        "file": "az3.terrain0908.0ab76c3b979e35b8.tpk",
+        "rev": "a7a062753a85c27d",
+        "src_rev": "0ab76c3b979e35b8",
+        "format": "mstp1",
+        "bytes": 34594737,
+        "raw": 85536287,
+        "tris": 9888564,
+        "verts": 6609696,
+        "chunks": 330,
+        "bake": true,
+        "bake_params": {
+          "rays_per_side": 12,
+          "ao_dist_m": 10,
+          "sky_dist_m": 400
+        }
+      }
     },
     "bks": {
       "file": "bks.terrain0908.0371649608e61ef4.glb",
