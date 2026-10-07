@@ -54,7 +54,7 @@ test('latest selected map wins while manifest requests complete out of order', a
   const first = vm.runInContext('r3SwitchMap()', ctx);
   ctx.MAP_INFO = { key: 'az3' };
   const last = vm.runInContext('r3SwitchMap()', ctx);
-  for (const request of requests.toReversed()) {
+  for (const request of [...requests].reverse()) {
     request.resolve({ key: request.key, url: request.key + '.glb', rec: { bytes: 1 } });
   }
   await Promise.all([first, last]);
