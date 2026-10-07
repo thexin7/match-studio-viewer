@@ -812,7 +812,7 @@ body.mode3d .leaflet-control-zoom{display:none!important}
     </button>
   </div>
   <div class="pan-body">
-    <button class="row row-btn" id="s-map"><div class="row-col"><div class="row-t">切换地图</div><div class="row-s">2D 底图选择</div></div><span class="row-go">›</span></button>
+    <button class="row row-btn" id="s-map"><div class="row-col"><div class="row-t">切换地图</div><div class="row-s" id="map-current">2D / 3D 地图选择</div></div><span class="row-go">›</span></button>
     <div class="sec">头顶信息</div>
     <div class="row"><div class="row-col"><div class="row-t">干员名</div><div class="row-s">显示干员 / 玩家名</div></div><button class="sw" id="s-name"></button></div>
     <div class="row"><div class="row-col"><div class="row-t">武器</div><div class="row-s">当前手持武器名</div></div><button class="sw" id="s-wpn"></button></div>
@@ -2360,7 +2360,7 @@ function setMap(key, quiet) {
   const m = MAPS[key] || Object.values(MAPS)[0];
   if (!m) return;
   MAP_INFO = m;
-  setPref("mapkey", key);
+  setPref("mapkey", m.key);
   const mb = L.latLngBounds(m.bounds[0], m.bounds[1]);
   if (tileLayer) { map.removeLayer(tileLayer); tileLayer = null; }
   tileLayer = L.tileLayer(m.tileUrl, { tileSize: m.tileSize || 256,
@@ -2378,6 +2378,8 @@ function setMap(key, quiet) {
   if (alertCircle) { alertCircle.remove(); alertCircle = null; }
   clearPick();
   $("map-now").textContent = m.name;
+  $("map-current").textContent = m.name + ' · 共 ' + Object.keys(MAPS).length + ' 张地图';
+  $("qk-map").title = '当前地图：' + m.name;
   document.querySelectorAll("#maps .mcard").forEach(c => c.classList.toggle("on", c.dataset.k === key));
   if (!quiet) toast("已切换到 " + m.name);
   if (lastSnap) draw(lastSnap);
@@ -2938,7 +2940,7 @@ new MutationObserver(poiApplyZoom).observe($("map"), { attributes: true, attribu
 /* ------------------------------------------------------------ 3D 白模视图
    同源引擎：/m3d/r3d.js（three.js + 极简 GLB 读取），与 2D 共用同一份快照。
    模型 16~37MB，首次进图下载一次后走 ETag 长缓存；没有模型的图直接提示。 */
-let R3 = null, r3busy = false, r3man = null;
+let R3 = null, r3busy = false, r3man = null, r3SwitchVersion = 0;
 const M3D = "/m3d/";
 const is3d = () => !!R3 && document.body.classList.contains("mode3d");
 
@@ -2949,8 +2951,11 @@ function r3CamSync() {
 }
 async function r3Manifest() {
   if (r3man) return r3man;
-  try { r3man = await (await fetch(M3D + "manifest.json", { cache: "no-cache" })).json(); }
-  catch (e) { r3man = { maps: {} }; }
+  try {
+    const response = await fetch(M3D + 'manifest.json', { cache: 'no-cache' });
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    r3man = await response.json();
+  } catch (e) { return { maps: {} }; }
   return r3man;
 }
 function r3Loading(on, pct, txt) {
@@ -2959,8 +2964,7 @@ function r3Loading(on, pct, txt) {
   if (txt) $("r3-load-t").textContent = txt;
   $("r3-bar").firstElementChild.style.width = Math.max(0, Math.min(100, pct || 0)) + "%";
 }
-async function r3Model() {
-  const k = (MAP_INFO && MAP_INFO.key) || DEF_MAP;
+async function r3Model(k = (MAP_INFO && MAP_INFO.key) || DEF_MAP) {
   const mf = await r3Manifest();
   const rec = mf.maps && mf.maps[k];
   if (!rec) return null;
@@ -2979,12 +2983,17 @@ function r3Focus(key) {
 // 换图：3D 开着就把新图白模换上；该图没有白模则退回 2D，不留一张错图在屏幕上
 async function r3SwitchMap() {
   if (!R3 || !is3d()) return;
-  const m = await r3Model();
+  const version = ++r3SwitchVersion, info = MAP_INFO;
+  const m = await r3Model(info.key);
+  if (version !== r3SwitchVersion || !is3d()) return;
   if (!m) { toast("该地图暂无 3D 白模，已切回 2D"); set3d(false, true); return; }
   const mb = (((m.rec.packed && m.rec.packed.bytes) || m.rec.bytes) / 1048576).toFixed(0);
   r3Loading(true, 0, "载入 " + (m.rec.name || m.key) + " 白模 " + mb + "MB…");
-  await R3.setMap(MAP_INFO, m.url, (got, tot) => r3Loading(true, tot ? got / tot * 100 : 0,
-    "载入 " + (m.rec.name || m.key) + " " + (got / 1048576).toFixed(1) + "/" + mb + "MB"), m.rec);
+  await R3.setMap(info, m.url, (got, tot) => {
+    if (version === r3SwitchVersion) r3Loading(true, tot ? got / tot * 100 : 0,
+      "载入 " + (m.rec.name || m.key) + " " + (got / 1048576).toFixed(1) + "/" + mb + "MB");
+  }, m.rec);
+  if (version !== r3SwitchVersion) return;
   r3Loading(false);
   if (lastSnap) R3.update(loot3dSnapshot(lastSnap));
 }
@@ -3018,11 +3027,11 @@ async function set3d(on, quiet) {
   }
   r3busy = true;
   try {
-    const m = await r3Model();
+    let m = await r3Model();
     if (!m) { toast("该地图暂无 3D 白模"); return; }
     if (!R3) {
       r3Loading(true, 2, "载入 3D 引擎…");
-      const mod = await import(M3D + "korr-adapter.js?v=1.4.1");
+      const mod = await import(M3D + "korr-adapter.js?v=1.4.2");
       R3 = mod.create({
         canvas: $("r3-cv"), labels: $("r3-lbl"), hud: $("r3-hud"),
         mapInfo: MAP_INFO, model: m.rec, pref: PREF,
@@ -3040,6 +3049,10 @@ async function set3d(on, quiet) {
         setFollow(mode !== "orbit", false); r3CamSync();
       };
     }
+    // 引擎导入期间仍可选择地图，装载时以最后一次选择为准。
+    const info = MAP_INFO;
+    if (m.key !== info.key) m = await r3Model(info.key);
+    if (!m) { toast('该地图暂无 3D 白模'); return; }
     document.body.classList.add("mode3d");
     if (R3 && R3.setActive) R3.setActive(true);
     $("r3").classList.add("on");
@@ -3052,7 +3065,7 @@ async function set3d(on, quiet) {
     R3.resize();
     const mb = (((m.rec.packed && m.rec.packed.bytes) || m.rec.bytes) / 1048576).toFixed(0);
     r3Loading(true, 3, "载入 " + (m.rec.name || m.key) + " 白模 " + mb + "MB…");
-    await R3.setMap(MAP_INFO, m.url, (got, tot) => {
+    await R3.setMap(info, m.url, (got, tot) => {
       r3Loading(true, tot ? got / tot * 100 : 0,
         "载入 " + (m.rec.name || m.key) + " " + (got / 1048576).toFixed(1) + "/" + mb + "MB");
     }, m.rec);

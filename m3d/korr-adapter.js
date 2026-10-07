@@ -117,7 +117,7 @@ async function loadPackedGeometry(job){
   try{
     const url=new URL(pk.file+'?v='+encodeURIComponent(pk.rev || pk.bytes || 1),new URL(job.url,location.href)).href;
     const t0=performance.now();
-    const pack=await loadTerrainPack(url,job.progress);
+    const pack=await loadTerrainPack(url,job.progress,job.controller.signal);
     const g=new THREE.BufferGeometry();
     g.setAttribute('position',new THREE.BufferAttribute(pack.position,3));
     g.setIndex(new THREE.BufferAttribute(pack.index,1));
@@ -126,6 +126,7 @@ async function loadPackedGeometry(job){
     console.log(`[Radar3D] 地形包 ${pk.file} 已解码：${pack.verts} 顶点 / ${pack.tris} 面，bake=${!!pack.bake}，${Math.round(performance.now()-t0)}ms`);
     return g;
   }catch(e){
+    if(job.controller.signal.aborted)throw e;
     console.warn('[Radar3D] 地形包加载失败，回退 GLB：',e);
     return null;
   }
@@ -143,7 +144,7 @@ export function create(options) {
   gateway.setHud(options.hud || null);
   let latest=null,pref=options.pref || {},active=true;
   const presenter=new PosePresenter();
-  let statError='',mapUrl='',pendingMap=null,loading=null,followKey='__self',applyingCamera=false;
+  let statError='',mapUrl='',pendingMap=null,loading=null,loadingJob=null,followKey='__self',applyingCamera=false;
   const adapter={camMode:'chase',onCam:null,
     update(s){
       latest=s;presenter.push(s,performance.now());
@@ -176,20 +177,25 @@ export function create(options) {
     focus(key,s){const e=key==='__self'?{world:s.self}:s.entities.find(x=>x.key===key);
       if(e?.world){window.radar3dSetCameraMode('free');window.radar3dFocus(key==='__self'?'self':'player',...e.world,key);this.camMode='orbit';}},
     async setMap(info,url,progress,model){
-      pendingMap={info,url,progress,model};if(loading)return loading;
+      pendingMap={info,url,progress,model};
+      if(loadingJob && loadingJob.url!==url)loadingJob.controller.abort();
+      if(loading)return loading;
       loading=(async()=>{while(pendingMap){const job=pendingMap;pendingMap=null;if(job.url===mapUrl)continue;
+        job.controller=new AbortController();loadingJob=job;
         statError='';try{
           let geometry=await loadPackedGeometry(job);
           if(!geometry){
-            const response=await fetch(job.url,{cache:'force-cache'});if(!response.ok)throw Error('地图 HTTP '+response.status);
+            const response=await fetch(job.url,{cache:'force-cache',signal:job.controller.signal});if(!response.ok)throw Error('地图 HTTP '+response.status);
             const data=await readWithProgress(response,job.progress);
             geometry=geometryFromParts(parseGLB(data));
           }
+          if(job.controller.signal.aborted){geometry.dispose();continue;}
           // 装图是异步的（Worker 切块）：等它完成，失败才能进 statError，载入提示也不会提前消失
           await gateway.installGeometry(job.info?.key || 'local',geometry);
           mapUrl=job.url;
           if(['orbit','top'].includes(adapter.camMode) || !latest?.self)gateway.fit();
-        }catch(e){statError=String(e.message || e);options.onToast?.('3D 地图加载失败：'+statError);}
+        }catch(e){if(!job.controller.signal.aborted){statError=String(e.message || e);options.onToast?.('3D 地图加载失败：'+statError);}}
+        finally{loadingJob=null;}
       }})();try{await loading;}finally{loading=null;}
     }
   };

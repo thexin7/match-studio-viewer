@@ -29,6 +29,18 @@ npm run dev
 
 6 张地图的白模 GLB（约 380 MB）位于 `m3d/`，与 `manifest.json` 配套。文件在 `.gitignore` 中，完整开发环境需本地具备这些资产；无 GLB 时 2D 仍可用。
 
+地图目录包含零号大坝、长弓溪谷、航天基地、巴克什、潮汐监狱和 AZ3。功能台的「切换地图」及移动端底栏的「地图」入口共用同一目录，切换时同时更新 2D 底图、3D 地形和点位。
+
+六张地图均有目录点位；目前只有零号大坝另有按难度划分的点位数据，其他地图使用各自目录中的撤离点和容器，不套用大坝难度数据。
+
+多地图验证（需要对应地形资产，`--url` 指向待测服务）：
+
+```bash
+node --test dev/maps.test.mjs dev/poll.test.mjs dev/quality.test.mjs dev/smoke.test.mjs
+node dev/poi-check.mjs
+node dev/smoke.mjs --url http://127.0.0.1:5173/ --map az3 --quality perf --size 390x844
+```
+
 ## 架构
 
 ```

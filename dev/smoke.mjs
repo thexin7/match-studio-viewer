@@ -21,6 +21,8 @@ const HELP = `用法: node dev/smoke.mjs [选项]
   --seconds <秒>      每个阶段的采样时长，默认 6
   --size <宽x高>      视口尺寸，默认 1600x900
   --port <端口>       远程调试端口，默认 9333
+  --map <key>        检查指定地图（通过页面地图卡片切换）
+  --quality <档位>   auto / perf / mid / high，默认 auto
   -h, --help          显示帮助
 
 输出: stdout 打印 JSON（各阶段每秒脚本/布局/样式耗时、帧率、错误列表）。
@@ -28,7 +30,7 @@ const HELP = `用法: node dev/smoke.mjs [选项]
 
 function parseArgs(argv) {
     const opt = { url: 'http://127.0.0.1:5173/', out: path.join(os.tmpdir(), 'ms-smoke'), chrome: '',
-        seconds: 6, width: 1600, height: 900, port: 9333 };
+        seconds: 6, width: 1600, height: 900, port: 9333, map: '', quality: 'auto' };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i], v = () => {
             if (i + 1 >= argv.length) throw new Error(`${a} 缺少参数值`);
@@ -40,6 +42,8 @@ function parseArgs(argv) {
         else if (a === '--chrome') opt.chrome = v();
         else if (a === '--seconds') opt.seconds = Number(v());
         else if (a === '--port') opt.port = Number(v());
+        else if (a === '--map') opt.map = v();
+        else if (a === '--quality') opt.quality = v();
         else if (a === '--size') {
             const m = /^(\d+)x(\d+)$/.exec(v());
             if (!m) throw new Error('--size 格式应为 宽x高');
@@ -47,6 +51,7 @@ function parseArgs(argv) {
         } else throw new Error(`未知参数: ${a}`);
     }
     if (!(opt.seconds > 0)) throw new Error('--seconds 必须为正数');
+    if (!['auto', 'perf', 'mid', 'high'].includes(opt.quality)) throw new Error('无效画质档位');
     return opt;
 }
 
@@ -173,15 +178,25 @@ async function main() {
         await cdp.send('Emulation.setDeviceMetricsOverride', { width: opt.width, height: opt.height, deviceScaleFactor: 1, mobile: false });
         await cdp.send('Page.navigate', { url: opt.url });
         await sleep(1500);
-        await cdp.eval('localStorage.clear(); 0');      // 每次从默认偏好开始，结果可复现
+        await cdp.eval(`localStorage.clear(); localStorage.setItem('nr2_q3d', ${JSON.stringify(opt.quality)}); 0`);
         await cdp.send('Page.reload', { ignoreCache: true });
         await sleep(4000);
+        if (opt.map) {
+            const selected = await cdp.eval(`(() => {
+                const card = [...document.querySelectorAll('#maps .mcard')].find(c => c.dataset.k === ${JSON.stringify(opt.map)});
+                if (!card) return false;
+                card.click(); return MAP_INFO.key === ${JSON.stringify(opt.map)};
+            })()`);
+            if (!selected) throw new Error('地图卡片不存在或切换失败：' + opt.map);
+            await sleep(500);
+        }
         const phases = [];
         phases.push(await sample(cdp, '2d', opt.seconds, opt));
         const has3d = await cdp.eval('typeof NO3D !== "undefined" && !NO3D');
         if (has3d) {
             await cdp.eval(`document.getElementById('s-3d').click(); 0`);
             await waitForTerrain(cdp);
+            if (opt.map && await cdp.eval('window.gateway3d.stat().mapTexture.key') !== opt.map) throw new Error('3D 地形与所选地图不一致');
             phases.push(await sample(cdp, '3d-chase', opt.seconds, opt));
             await cdp.eval(`document.querySelector('#camseg button[data-cam="fpv"]')?.click(); 0`);
             await sleep(2500);
@@ -189,7 +204,7 @@ async function main() {
         }
         const r3 = await cdp.eval('JSON.stringify(window.gateway3d ? window.gateway3d.stat() : null)');
         code = errors.length ? 1 : 0;
-        console.log(JSON.stringify({ ok: code === 0, url: opt.url, phases, skipped3d: !has3d, render3d: JSON.parse(r3 || 'null'),
+        console.log(JSON.stringify({ ok: code === 0, url: opt.url, map: opt.map, quality: opt.quality, phases, skipped3d: !has3d, render3d: JSON.parse(r3 || 'null'),
             errors, warnings, notFound: [...notFound].sort() }, null, 2));
         cdp.ws.close();
     } catch (e) {
