@@ -58,6 +58,35 @@ node --test dev/terrain-light.test.mjs
 
 自动、流畅、平衡档优先使用版本匹配的轻量包；高清档使用完整包。轻量包下载失败会依次尝试完整 TPK 和原始 GLB。更换 GLB 或重新烘焙后，需要重新生成轻量包。原始 GLB、完整包均保留；轻量处理不会自动修复原地形中的拼接接缝。
 
+## 地形接缝修复与加载优化
+
+2026-10-07 核对发现，五张地图的原始 GLB 内 64×64、间距 2 米的高度网格存在 XY 行列转置。以大坝为例，5,143 个共享边界点的高度差中位数为 16.94 米，最大 117.59 米；转置恢复后最大差为 0.00129 米。完整 TPK 编码与运行时切块此前并未丢失三角形，问题来自源几何的高度网格方向。
+
+`tools/terrain-pack/repair.mjs` 只识别并修复规则高度网格，建筑几何与人物世界坐标保持原有语义。原 GLB 留存，新 GLB 使用独立文件名；manifest 的 `terrain_source` 保存原文件和版本，`terrain_repair` 保存修复前后统计。行列恢复后，同一高度网格采样点的小范围残余断差可做边界焊接，超过 0.75 米不自动焊接；长弓溪谷最大单点调整约 0.317 米。巴克什已有边界连续，不应用转置。
+
+| 地图 | 修复前共享边界最大高差 | 修复后 |
+|---|---:|---:|
+| 零号大坝 | 117.588 m | 0.00129 m |
+| AZ3 | 49.046 m | 0.00281 m |
+| 长弓溪谷 | 204.473 m | 0.00209 m |
+| 潮汐监狱 | 99.031 m | 0.00200 m |
+| 航天基地 | 40.674 m | 0.00139 m |
+
+重建流程（单图示例）：
+
+```bash
+node tools/terrain-pack/repair.mjs daba
+node tools/terrain-pack/cli.mjs daba --threads 12
+node tools/terrain-pack/light.mjs daba
+node --test dev/terrain-seams.test.mjs dev/terrain-worker.test.mjs dev/terrain-bake.test.mjs dev/terrain-light.test.mjs
+```
+
+先修复 GLB，再重建 AO/天空可见度和轻量包；旧烘焙不能套用到已移动的地形上。修复 GLB 使用 8 字节步长存放 int16 VEC3，浏览器 GLB 回退与离线读取器均支持该对齐方式。五份修复 GLB 通过 Khronos 验证，无错误或警告；原始源文件的已知格式问题仍由原文件保留。
+
+浏览器现在将 TPK 下载、解压和解码放在 module Worker，结果以可转移缓冲区交给主线程。换地图时终止旧解码任务；Worker 不可用时保留直接解码，轻量包失败仍回退完整包和 GLB。离线烘焙改为按小批次分配工作，避免密集区域集中在少数线程；同一大坝输入和参数下，调整前后生成的完整 TPK 哈希一致。
+
+硬件路径冒烟可使用 `node dev/smoke.mjs --url http://127.0.0.1:5173/ --hardware`。默认冒烟仍强制 SwiftShader，不能把它的 FPS 当成真实 GPU 性能。地形接缝通过不等于每个游戏姿态的脚底高度都已验收；本次没有通过修改人物 Z 或吸附地面掩盖原始坐标差异。
+
 ## 导播控制台与透明叠加层
 
 打开 `/studio` 使用 G 风格的导播控制台。原查看器 `/` 保留地图主界面，并提供控制台入口。
@@ -106,6 +135,8 @@ node dev/studio-smoke.mjs http://127.0.0.1:5173
 完整契约与重构说明见 [AGENTS.md](./AGENTS.md)。
 
 ## 技术栈
+
+3D 设置中的“渲染模式”支持手动选择手机（30 FPS、关闭建筑阴影）、电脑（60 FPS、较高细节）和均衡档。独立设备各自保存渲染偏好；控制台仍可调整 OBS 嵌入视图。人物采用按身份匹配的无贴图简化原模型，威龙保留头盔；资源预算与离线生成方法见 [干员资源说明](ui/models/operator/README.md)。
 
 - 原生 JavaScript（ES modules + import map）
 - [Leaflet](https://leafletjs.com/) — 2D 地图

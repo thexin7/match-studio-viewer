@@ -173,7 +173,13 @@ function parseGLB(buf) {
   const read = (ai) => {
     const a = js.accessors[ai], bv = js.bufferViews[a.bufferView];
     const Ctor = CT[a.componentType], n = a.count * NC[a.type];
-    return new Ctor(buf, bin.off + (bv.byteOffset || 0) + (a.byteOffset || 0), n);
+    const start = bin.off + (bv.byteOffset || 0) + (a.byteOffset || 0), element = NC[a.type] * Ctor.BYTES_PER_ELEMENT;
+    if (bv.byteStride && bv.byteStride !== element) {
+      const packed = new Uint8Array(n * Ctor.BYTES_PER_ELEMENT);
+      for (let v = 0; v < a.count; v++) packed.set(new Uint8Array(buf, start + v * bv.byteStride, element), v * element);
+      return new Ctor(packed.buffer);
+    }
+    return new Ctor(buf, start, n);
   };
   const out = [];
   for (const nd of js.nodes || []) {

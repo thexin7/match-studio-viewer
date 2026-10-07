@@ -1,8 +1,8 @@
 import * as THREE from 'three';
 import {characterKind,aimOf,PosePresenter} from './gateway-pose.js?v=1.1.0';
-import { parseGLB } from './r3d.js?v=1.1.0';
-import { loadTerrainPack } from './terrain-packed.js?v=1.4.0';
-import { gateway } from './korr-renderer.js?v=1.4.1';
+import { parseGLB } from './r3d.js?v=1.1.1';
+import { loadTerrainPack } from './terrain-packed.js?v=1.5.0';
+import { gateway } from './korr-renderer.js?v=1.6.0';
 
 // ER snapshots and local GLBs -> Korr renderer, retaining the ER page and controls.
 // Coordinates enter in UE centimetres. GLB uses metres [UE.x, UE.z, UE.y].

@@ -690,7 +690,7 @@ body.mode3d .leaflet-control-zoom{display:none!important}
 </style>
 <link rel="stylesheet" href="/ui/shubao.css?v=1.4.0">
 <link rel="stylesheet" href="/ui/studio/viewer.css?v=1.0.2">
-<script src="/ui/dock.js?v=1.4.0" defer></script>
+<script src="/ui/dock.js?v=1.5.0" defer></script>
 </head>
 <body>
 <div id="map"></div>
@@ -864,24 +864,24 @@ body.mode3d .leaflet-control-zoom{display:none!important}
     <div class="sld"><span>3D 朝向位置</span>
       <div class="vs-seg" id="directionanchor3dseg" role="group" aria-label="3D 朝向位置">
         <button class="vs on" data-anchor="head">头部</button><button class="vs" data-anchor="foot">脚底</button></div></div>
-    <div class="sld"><span>3D 人物着色</span>
+    <div class="sld"><span>阵营识别</span>
       <div class="vs-seg" id="color3dseg" role="group" aria-label="3D 人物着色">
-        <button class="vs on" data-color="team">队伍色（同 2D）</button><button class="vs" data-color="vis">可见 / 掩体后</button></div></div>
-    <div class="row color-setting visible"><div class="row-col"><div class="row-t">可见颜色</div><div class="row-s">「可见 / 掩体后」着色时：人物未被建筑遮挡</div></div><label class="color-swatch"><input id="s-visiblecolor3d" type="color" value="#49d5ff" aria-label="3D 可见人物颜色"><span id="v-visiblecolor3d">#49D5FF</span></label></div>
-    <div class="row color-setting occluded"><div class="row-col"><div class="row-t">掩体后颜色</div><div class="row-s">「可见 / 掩体后」着色时：人物位于墙体或掩体后</div></div><label class="color-swatch"><input id="s-occludedcolor3d" type="color" value="#ff4058" aria-label="3D 掩体后人物颜色"><span id="v-occludedcolor3d">#FF4058</span></label></div>
+        <button class="vs on" data-color="team" disabled>友军绿 / 敌方红</button><button class="vs" data-color="vis" style="display:none">可见 / 掩体后</button></div></div>
+    <div class="row color-setting visible" style="display:none"><div class="row-col"><div class="row-t">可见颜色</div><div class="row-s">「可见 / 掩体后」着色时：人物未被建筑遮挡</div></div><label class="color-swatch"><input id="s-visiblecolor3d" type="color" value="#49d5ff" aria-label="3D 可见人物颜色"><span id="v-visiblecolor3d">#49D5FF</span></label></div>
+    <div class="row color-setting occluded" style="display:none"><div class="row-col"><div class="row-t">掩体后颜色</div><div class="row-s">「可见 / 掩体后」着色时：人物位于墙体或掩体后</div></div><label class="color-swatch"><input id="s-occludedcolor3d" type="color" value="#ff4058" aria-label="3D 掩体后人物颜色"><span id="v-occludedcolor3d">#FF4058</span></label></div>
     <div class="sld"><span>左右侧栏主题</span>
       <div class="vs-seg" id="panelthemeseg" role="group" aria-label="左右侧栏主题">
         <button class="vs on" data-theme="dark">暗色</button><button class="vs" data-theme="light">亮色</button></div></div>
-    <div class="sld"><span style="font-size:11.5px;color:var(--txt-2);white-space:nowrap">3D 画质</span>
+    <div class="sld"><span style="font-size:11.5px;color:var(--txt-2);white-space:nowrap">渲染模式</span>
       
-      <div class="vs-seg" id="q3dseg" role="group" aria-label="3D 画质">
-        <button class="vs on" data-q="auto">自动</button><button class="vs" data-q="perf">流畅</button><button class="vs" data-q="balanced">平衡</button><button class="vs" data-q="high">高清</button></div></div>
+      <div class="vs-seg" id="q3dseg" role="group" aria-label="3D 渲染模式">
+        <button class="vs on" data-q="auto">自动</button><button class="vs" data-q="perf" title="手机模式：30 FPS，关闭阴影，优先流畅">手机</button><button class="vs" data-q="mid">均衡</button><button class="vs" data-q="high" title="电脑模式：60 FPS，提高显示细节">电脑</button></div></div>
     <div class="sld"><span style="font-size:11.5px;color:var(--txt-2);white-space:nowrap">建筑阴影</span>
       <div class="vs-seg" id="shadow3dseg" role="group" aria-label="3D 建筑阴影">
         <button class="vs on" data-shadow="auto">自动</button><button class="vs" data-shadow="on">开</button><button class="vs" data-shadow="off">关</button></div></div>
     <div class="sld"><span style="font-size:11.5px;color:var(--txt-2);white-space:nowrap">帧率上限</span>
       <div class="vs-seg" id="fpscapseg" role="group" aria-label="帧率上限">
-        <button class="vs on" data-f="0">无上限</button><button class="vs" data-f="60">60</button><button class="vs" data-f="120">120</button><button class="vs" data-f="144">144</button></div></div>
+        <button class="vs on" data-f="0">无上限</button><button class="vs" data-f="30">30</button><button class="vs" data-f="60">60</button><button class="vs" data-f="120">120</button><button class="vs" data-f="144">144</button></div></div>
     <div class="row"><div class="row-col"><div class="row-t">队友</div><div class="row-s">关闭后只看敌人</div></div><button class="sw" id="s-mate"></button></div>
     <div class="row"><div class="row-col"><div class="row-t">敌人标识</div><div class="row-s">敌人头顶显示红色「敌人」</div></div><button class="sw" id="s-foe"></button></div>
     <div class="row"><div class="row-col"><div class="row-t">移动轨迹</div><div class="row-s">最近一段路径</div></div><button class="sw" id="s-trail"></button></div>
@@ -1034,13 +1034,16 @@ if (STUDIO_EMBED) Object.assign(PREF, PREF_DEF);
 function setPref(k, v) { PREF[k] = v; if (!STUDIO_EMBED) { try { localStorage.setItem("nr2_" + k, v); } catch (e) {} } }
 // V5.1.5+ removes the ambiguous old "follow" entry; migrate it to third-person follow.
 if (PREF.cam3d === "follow") setPref("cam3d", "chase");
+if (PREF.q3d === "balanced") setPref("q3d", "mid");
+if (PREF.color3d !== "team") setPref("color3d", "team");
 
 /* ------------------------------------------------------------- 色彩语义 */
 // 队伍色板：同队同色、异队异色。self/mate/box/loot 固定语义色。
 // 敌队色避开我方的绿（自己）与蓝（队友）；AI 不与任何队伍撞色。2D 与 3D 共用这一份
 // （3D 通过 create({palette}) 拿到），保证同一个人在两个视图里是同一种颜色。
-const TEAM_COLORS = ["#ff5f6d","#ff9f43","#ffd54f","#c792ea","#4dd0e1","#f48fb1","#eceff1","#ff8a65"];
-const C_SELF = "#37e08a", C_MATE = "#4c8dff", C_BOX = "#a97bff", C_AI = "#c8b07a", C_UNK = "#8c96a8";
+const C_FOE = "#ff4058";
+const TEAM_COLORS = Array(8).fill(C_FOE);
+const C_SELF = "#37e08a", C_MATE = "#37e08a", C_BOX = "#a97bff", C_AI = C_FOE, C_UNK = "#8c96a8";
 const C_ALERT = "#ff2d3f";
 const GRADE_COL = {1:"#c9d1de",2:"#6bcf7f",3:"#4c8dff",4:"#c792ea",5:"#ffb547",6:"#ff5f6d"};
 // 背包名 -> 等级(gear_catalog.tier)：装备行「包N」用
@@ -1062,13 +1065,15 @@ const boxColor = (e) => (e.is_ai === true || e.is_bot === true) ? C_BOX : "#ffb5
 // 贴脸预警的滞回状态（key -> bool）：避免距离在阈值边缘抖动时每帧翻转
 const alertHold = new Map();
 function entColor(e) {
-  // 自己绿、队友蓝；敌队按队号取色板（一队一色）
+  // 阵营色：自己与友军绿色，敌方红色；队号继续用于分组。
   if (e.kind === "self") return C_SELF;
   if (e.kind === "mate") return C_MATE;
   if (e.kind === "container") return "#38bdf8";
   if (e.kind === "box")  return boxColor(e);
   if (e.kind === "loot") return GRADE_COL[e.grade] || "#ffb547";
   if (e.kind === "ai")   return C_AI;
+  if (e.kind === "player") return C_FOE;
+  if (e.kind === "unknown") return C_UNK;
   if (e.team > 0) return TEAM_COLORS[(e.team - 1) % TEAM_COLORS.length];
   return C_UNK;
 }
@@ -2775,17 +2780,24 @@ bindSlider("s-warnd", "warnd", v => Number(v) === 0 ? "关" : v + "m");
 bindSlider("s-warnr", "warnr", v => v + "px");
 // 预警箭头大小（%）：缩放三角与它旁边的距离数字（圆半径不跟着变，两者独立调）
 bindSlider("s-warnsz", "warnsz", v => v + "%");
-// 3D 画质：auto / perf / balanced / high（只调渲染分辨率，不动几何贴图）。
+// Reuse the existing preference contract for device presets; older balanced
+// preferences remain readable through the mid alias.
 // 「自动」会按设备先给一档，之后实测帧率偏低就自动降档（r3d 的 setQuality/_autoDowngrade）。
 (function bindQuality() {
   const seg = $("q3dseg");
   if (!seg) return;
   const sync = () => seg.querySelectorAll("button").forEach(b =>
-    b.classList.toggle("on", b.dataset.q === (PREF.q3d || "auto")));
+    b.classList.toggle("on", b.dataset.q === (PREF.q3d === "balanced" ? "mid" : PREF.q3d || "auto")));
   seg.querySelectorAll("button").forEach(b => b.addEventListener("click", () => {
     setPref("q3d", b.dataset.q);
+    if (b.dataset.q === "perf" || b.dataset.q === "high") {
+      setPref("fpscap", b.dataset.q === "perf" ? 30 : 60);
+      setPref("shadow3d", b.dataset.q === "perf" ? "off" : "auto");
+      $("fpscapseg").querySelectorAll("button").forEach(el => el.classList.toggle("on", Number(el.dataset.f) === PREF.fpscap));
+      $("shadow3dseg").querySelectorAll("button").forEach(el => el.classList.toggle("on", el.dataset.shadow === PREF.shadow3d));
+    }
     sync();
-    if (R3) { R3.setQuality(PREF.q3d); r3SwitchMap(); }
+    if (R3) { R3.setPrefs(PREF); R3.setQuality(PREF.q3d); r3SwitchMap(); }
   }));
   sync();
 })();
@@ -3043,7 +3055,7 @@ async function set3d(on, quiet) {
     if (!m) { toast("该地图暂无 3D 白模"); return; }
     if (!R3) {
       r3Loading(true, 2, "载入 3D 引擎…");
-      const mod = await import(M3D + "korr-adapter.js?v=1.5.0");
+      const mod = await import(M3D + "korr-adapter.js?v=1.6.0");
       R3 = mod.create({
         canvas: $("r3-cv"), labels: $("r3-lbl"), hud: $("r3-hud"),
         mapInfo: MAP_INFO, model: m.rec, pref: PREF,
@@ -3276,6 +3288,6 @@ window.matchStudio = {
   },
 };
 </script>
-<script type="module" src="/ui/studio/viewer-bridge.js?v=1.0.2"></script>
+<script type="module" src="/ui/studio/viewer-bridge.js?v=1.0.3"></script>
 </body>
  </html>

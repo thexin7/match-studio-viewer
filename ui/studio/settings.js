@@ -31,7 +31,7 @@ export const groups = [
     ['fpvheight', '视角高度', 'range', 1.6, .5, 3, .1, 'm'],
   ] },
   { name: '系统', hint: '3D 画质、阴影与帧率', items: [
-    ['q3d', '3D 画质', 'select', 'auto', [['auto', '自动'], ['perf', '流畅'], ['mid', '平衡'], ['high', '高清']]],
+    ['q3d', '渲染模式', 'select', 'auto', [['auto', '自动'], ['perf', '手机模式'], ['mid', '均衡'], ['high', '电脑模式']]],
     ['shadow3d', '建筑阴影', 'select', 'auto', [['auto', '自动'], ['on', '开启'], ['off', '关闭']]],
     ['fpscap', '帧率上限', 'select', 0, [[0, '无限制'], [30, '30 FPS'], [60, '60 FPS'], [120, '120 FPS']]],
     ['paneltheme', '查看器面板', 'select', 'dark', [['dark', '深色'], ['light', '浅色']]],

@@ -19,11 +19,12 @@
 */
 
 import * as THREE from 'three';
-import {syncCharacterModel,animateCharacterModel} from './character-models.js?v=1.4.0';
+import { isEnemyOfViewer as _isEnemyOfViewer } from './character-detail.js?v=1.1.0';
+import {syncCharacterModel,animateCharacterModel} from './character-models.js?v=1.6.0';
 import {aimDirection,splitSurfaceIndices} from './gateway-pose.js?v=1.1.0';
 import { buildMapChunksAsync } from './map-chunks.js?v=1.4.0';
 import { buildMapTexture } from './map-texture.js?v=1.4.0';
-import { createHud } from './korr-hud.js?v=1.4.0';
+import { createHud } from './korr-hud.js?v=1.5.0';
 import { createPoiLayer } from './poi-3d.js?v=1.4.0';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -42,8 +43,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
    里颜色一致。以前 3D 自带一套色板，2 队在 2D 是橙色、3D 是蓝色，3 队在 3D 是绿色，
    与队友绿撞色。下面的默认值只在页面未下发时兜底。 */
 const PALETTE = {
-    teams: [0xff5f6d, 0xff9f43, 0xffd54f, 0xc792ea, 0x4dd0e1, 0xf48fb1, 0xeceff1, 0xff8a65],
-    self: 0x37e08a, mate: 0x4c8dff, ai: 0xc8b07a, unknown: 0x8c96a8,
+    teams: Array(8).fill(0xff4058),
+    self: 0x37e08a, mate: 0x37e08a, ai: 0xff4058, unknown: 0x8c96a8,
     alert: 0xff2d3f, down: 0xffcf4d, dead: 0x475569,
 };
 function setPalette(p) {
@@ -1373,17 +1374,11 @@ function _pickDetail(distM, kind, isFollowed) {
     return distM < CARD_RANGE_M ? 2 : 0;
 }
 
-/* 人物模型配色。
-   team：可见与掩体后都用身份色（掩体后半透明），敌我与队伍一眼可辨，与 2D 一致；
-   vis ：敌人按「可见 / 掩体后」两种自定义色区分，适合盯掩体；我方始终用我方色。 */
+/* 可见人物、掩体后剪影使用同一阵营色；阵亡通过透明度与姿态表达。 */
 const _look = { visible: 0, occluded: 0, opacity: 0.5 };
 function _modelColors(identity, enemyLike, dead, disp) {
-    if (dead) { _look.visible = _look.occluded = PALETTE.dead; _look.opacity = 0.35; }
-    else if (disp.color3d === 'vis' && enemyLike) {
-        _look.visible = _prefColorHex(disp.visibleColor3d, identity);
-        _look.occluded = _prefColorHex(disp.occludedColor3d, 0xff4058);
-        _look.opacity = 0.72;
-    } else { _look.visible = _look.occluded = identity; _look.opacity = 0.5; }
+    _look.visible = _look.occluded = identity;
+    _look.opacity = dead ? .35 : .55;
     return _look;
 }
 
@@ -1428,17 +1423,17 @@ function updatePlayers(players) {
             // Use the same presented pose as XYZ.
             e.root.rotation.z = ueYawToThreeRotZ(p.yaw);
 
-            // 身份色：队友统一我方蓝，敌人按 TeamId 取与 2D 相同的队伍色
-            const isTeammate = p.kind === 'mate';
-            const teamId = Number(p.team) > 0 ? Number(p.team) : 0;
-            const color = isTeammate ? PALETTE.mate : teamColor(teamId);
+            // 与 HUD 使用同一观察者关系，避免模型和敌人标记互相矛盾。
+            const isTeammate = !_isEnemyOfViewer(frameViewer, p, false);
+
+            const color = p.kind === 'unknown' ? PALETTE.unknown : isTeammate ? PALETTE.mate : PALETTE.teams[0];
             const dead = p.alive === false;
             const look = _modelColors(color, !isTeammate, dead, disp);
-            syncCharacterModel(e,disp.model3d,{scale,visibleColor:look.visible,occludedColor:look.occluded,
+            syncCharacterModel(e,disp.model3d,{hero:p.hero,quality:_resolvedRenderQualityId(),scale,visibleColor:look.visible,occludedColor:look.occluded,
                 occludedOpacity:look.opacity,showHeading:disp.showCone !== false && Number.isFinite(p.yaw),
                 directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d,
                 helmetLv:p.helmetLv,armorLv:p.armorLv,bagLv:p.bagLv,gearColors:EQUIP_COLORS});
-            animateCharacterModel(e,p,camera);
+            animateCharacterModel(e,p,camera,performance.now(),renderer.domElement.clientHeight||900,_resolvedRenderQualityId());
             // 头顶信息卡 (名字 + 武器 + 血量 + 护甲)
             const nameParts = [];
             const lastKnown = (p._out_of_range || p.out_of_range) && !dead && !p.spawn_mark;
@@ -1497,7 +1492,8 @@ function updateBosses(bosses) {
                 e.root.position.y = ty;
                 e.root.position.z = tz;
             }
-            const info = { name: b.displayName || b.name || 'BOSS', colorHex: 0xff9966 };
+            e.mesh.material.color.setHex(PALETTE.teams[0]);e.occ.material.color.setHex(PALETTE.teams[0]);
+            const info = { name: b.displayName || b.name || 'BOSS', colorHex: PALETTE.teams[0] };
             if (disp.showHealth !== false && b.maxHp > 0 && b.hp != null) {
                 info.hpRatio = b.hp / b.maxHp;
                 info.hpText  = `${Math.round(b.hp)} / ${Math.round(b.maxHp)}`;
@@ -1543,8 +1539,9 @@ function updateAIs(ais) {
                 e.root.position.z = tz;
             }
             // v700x3: AI 只显示侧边血条, 不显示 info sprite
-            e.mesh.material.color.setHex(PALETTE.ai);
-            e.src = a; e.identityColor = PALETTE.ai; e.modelScale = 1;
+            const color = _isEnemyOfViewer(frameViewer, a, false) ? PALETTE.ai : PALETTE.mate;
+            e.mesh.material.color.setHex(color);e.occ.material.color.setHex(color);
+            e.src = a; e.identityColor = color; e.modelScale = 1;
             let hpRatio = null;
             if (disp.showHealth !== false && a.maxHp > 0 && a.hp != null) {
                 hpRatio = a.hp / a.maxHp;
@@ -1617,13 +1614,14 @@ function updateSelf(local) {
     /* 头顶信息卡: 只显示 "我" + hero */
     const disp = window.AppState?.display || {};
     const scale = Number(disp.charScale) || 1;
-    const look = _modelColors(PALETTE.self, false, !!local.dead, disp);
-    syncCharacterModel(selfEntity,disp.model3d,{scale,visibleColor:look.visible,occludedColor:look.occluded,
+    const color = _isEnemyOfViewer(frameViewer, local, true) ? PALETTE.teams[0] : PALETTE.self;
+    const look = _modelColors(color, false, !!local.dead, disp);
+    syncCharacterModel(selfEntity,disp.model3d,{hero:local.hero,quality:_resolvedRenderQualityId(),scale,visibleColor:look.visible,occludedColor:look.occluded,
         occludedOpacity:look.opacity,showHeading:disp.showCone !== false && Number.isFinite(local.yaw),
         directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d,gearColors:EQUIP_COLORS});
-    animateCharacterModel(selfEntity,local,camera);
-    selfEntity.src = local; selfEntity.identityColor = PALETTE.self; selfEntity.modelScale = scale;
-    const info = { name: disp.showName === false ? '' : '自己' + (local.hero ? ' ' + local.hero : ''), colorHex: PALETTE.self, plate: disp.tagOpacity };
+    animateCharacterModel(selfEntity,local,camera,performance.now(),renderer.domElement.clientHeight||900,_resolvedRenderQualityId());
+    selfEntity.src = local; selfEntity.identityColor = color; selfEntity.modelScale = scale;
+    const info = { name: disp.showName === false ? '' : '自己' + (local.hero ? ' ' + local.hero : ''), colorHex: color, plate: disp.tagOpacity };
     updateInfoCard(selfEntity.sprite,
         info,
         _pickDetail(camera.position.distanceTo(selfEntity.root.position), 'player',
@@ -3316,15 +3314,6 @@ function _resolveViewer(data) {
     }
     return null;
 }
-function _isEnemyOfViewer(viewer, src, isSelf) {
-    if (!viewer || !src) return false;
-    if (viewer.self) return src.kind === 'player' || src.kind === 'ai';
-    if (viewer.ai) return src.kind !== 'ai';
-    if (src.kind === 'ai') return true;
-    const team = isSelf ? viewer.selfTeam
-        : src.kind === 'mate' ? (viewer.selfTeam || Number(src.team) || 0) : (Number(src.team) || 0);
-    return !(viewer.team > 0 && team === viewer.team);
-}
 
 let hud = null;
 const hudItems = [];
@@ -3754,6 +3743,7 @@ export const gateway = {
             entities.push({kind,key:e.root.userData.entityKey,position:e.root.position.toArray(),yaw:e.root.rotation.z,label:e.sprite?.userData.key,
                 labelRange:e.sprite?.userData.rangeM,labelShowsDistance:e.sprite?.userData.showsDistance,labelScreenHeight:e.sprite?.userData.screenHeightPx,labelScale:e.sprite?.scale.toArray(),labelPosition:e.sprite?.position.toArray(),
                 model:e.modelStyle,customVisible:!!e.customModel?.root.visible,occludedModelVisible:!!e.customOccludedModel?.root.visible,
+                operatorAsset:e.operatorAssetKey,characterDetail:e.characterDetail,operator:e.customModel?.inspect?.(),
                 visibleColor:e.modelVisibleColor,occludedColor:e.modelOccludedColor,modelFootZ:e.modelFootZ,modelRenderedFootZ:e.modelRenderedFootZ,
                 headingStyle:e.headingStyle,headingAnchor:e.headingAnchor,
                 headingVisible:!!e.headings?.[e.headingStyle]?.visible.visible,

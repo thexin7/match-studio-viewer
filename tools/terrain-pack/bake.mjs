@@ -164,13 +164,13 @@ export async function bakeTerrain(position, index, opts = {}, log = () => {}) {
   wnrm.set(nrm);
   const out = new Uint8Array(new SharedArrayBuffer(count * 2)), progress = new Int32Array(new SharedArrayBuffer(4 * threads));
   const t2 = Date.now();
-  const per = Math.ceil(count / threads);
+  // Spatially adjacent samples can have very different ray costs. Claim small
+  // batches so dense indoor regions do not leave most workers idle at the tail.
+  const queue = new Int32Array(new SharedArrayBuffer(4));
   const workers = [];
-  for (let k = 0; k < threads; k++) {
-    const from = k * per, to = Math.min(count, from + per);
-    if (from >= to) break;
+  for (let k = 0; k < Math.min(threads, count); k++) {
     workers.push(new Promise((resolve, reject) => {
-      const wk = new Worker(new URL(import.meta.url), { workerData: { kind: 'terrain-bake', slot: k, from, to, rays, aoDist, skyDist,
+      const wk = new Worker(new URL(import.meta.url), { workerData: { kind: 'terrain-bake', slot: k, count, queue, rays, aoDist, skyDist,
         bounds: bvh.bounds, info: bvh.info, tris: bvh.tris, wpos, wnrm, out, progress } });
       wk.once('message', resolve); wk.once('error', reject);
       wk.once('exit', code => { if (code !== 0) reject(new Error(`烘焙 worker 退出码 ${code}`)); });
@@ -204,7 +204,7 @@ export async function bakeTerrain(position, index, opts = {}, log = () => {}) {
 
 /* ---------------------------------------------------------------- worker */
 function runWorker(d) {
-  const { from, to, rays, aoDist, skyDist, bounds, info, tris, wpos, wnrm, out, progress, slot } = d;
+  const { count, queue, rays, aoDist, skyDist, bounds, info, tris, wpos, wnrm, out, progress, slot } = d;
   const stack = new Int32Array(128);
   // 余弦加权的半球方向（螺旋分层），每个顶点再绕法线随机转一个角度，把条纹变成噪声
   const lx = new Float64Array(rays), ly = new Float64Array(rays), lz = new Float64Array(rays);
@@ -251,48 +251,50 @@ function runWorker(d) {
   }
 
   const EPS = 0.02;
-  for (let w = from; w < to; w++) {
-    const px = wpos[w * 3], py = wpos[w * 3 + 1], pz = wpos[w * 3 + 2];
-    const nx = wnrm[w * 3], ny = wnrm[w * 3 + 1], nz = wnrm[w * 3 + 2];
-    // Duff 等人的无分支正交基
-    const sg = nz >= 0 ? 1 : -1, a = -1 / (sg + nz), bb = nx * ny * a;
-    const tx = 1 + sg * nx * nx * a, ty = sg * bb, tz = -sg * nx;
-    const bx = bb, by = sg + ny * ny * a, bz = -ny;
-    const h = Math.imul(w ^ 0x5bd1e995, 0x27d4eb2d) >>> 0, rot = (h / 4294967296) * Math.PI * 2, cr = Math.cos(rot), sr = Math.sin(rot);
-    // 两侧都打：双面几何的「可见侧」取更开阔的一侧；向下且没打中的射线在选侧时按遮挡计，
-    // 否则地表下方的虚空会让地面永远选到背面而丢掉 AO。
-    let occF = 0, occB = 0, downF = 0, downB = 0;
-    for (let side = 0; side < 2; side++) {
-      const s = side ? -1 : 1, ox = px + s * nx * EPS, oy = py + s * ny * EPS, oz = pz + s * nz * EPS;
-      let occ = 0, down = 0;
-      for (let i = 0; i < rays; i++) {
-        const x = lx[i] * cr - ly[i] * sr, y = lx[i] * sr + ly[i] * cr, z = lz[i] * s;
-        const dx = tx * x + bx * y + nx * z, dy = ty * x + by * y + ny * z, dz = tz * x + bz * y + nz * z;
-        const t = trace(ox, oy, oz, dx, dy, dz, aoDist, false);
-        if (t >= 0) occ += 1 - t / aoDist; else if (dz < -0.3) down++;
+  for (let from = Atomics.add(queue, 0, 1024); from < count; from = Atomics.add(queue, 0, 1024)) {
+    const to = Math.min(count, from + 1024);
+    for (let w = from; w < to; w++) {
+      const px = wpos[w * 3], py = wpos[w * 3 + 1], pz = wpos[w * 3 + 2];
+      const nx = wnrm[w * 3], ny = wnrm[w * 3 + 1], nz = wnrm[w * 3 + 2];
+      // Duff 等人的无分支正交基
+      const sg = nz >= 0 ? 1 : -1, a = -1 / (sg + nz), bb = nx * ny * a;
+      const tx = 1 + sg * nx * nx * a, ty = sg * bb, tz = -sg * nx;
+      const bx = bb, by = sg + ny * ny * a, bz = -ny;
+      const h = Math.imul(w ^ 0x5bd1e995, 0x27d4eb2d) >>> 0, rot = (h / 4294967296) * Math.PI * 2, cr = Math.cos(rot), sr = Math.sin(rot);
+      // 两侧都打：双面几何的「可见侧」取更开阔的一侧；向下且没打中的射线在选侧时按遮挡计，
+      // 否则地表下方的虚空会让地面永远选到背面而丢掉 AO。
+      let occF = 0, occB = 0, downF = 0, downB = 0;
+      for (let side = 0; side < 2; side++) {
+        const s = side ? -1 : 1, ox = px + s * nx * EPS, oy = py + s * ny * EPS, oz = pz + s * nz * EPS;
+        let occ = 0, down = 0;
+        for (let i = 0; i < rays; i++) {
+          const x = lx[i] * cr - ly[i] * sr, y = lx[i] * sr + ly[i] * cr, z = lz[i] * s;
+          const dx = tx * x + bx * y + nx * z, dy = ty * x + by * y + ny * z, dz = tz * x + bz * y + nz * z;
+          const t = trace(ox, oy, oz, dx, dy, dz, aoDist, false);
+          if (t >= 0) occ += 1 - t / aoDist; else if (dz < -0.3) down++;
+        }
+        if (side) { occB = occ; downB = down; } else { occF = occ; downF = down; }
       }
-      if (side) { occB = occ; downB = down; } else { occF = occ; downF = down; }
+      rayCount += rays * 2;
+      const selF = occF + downF, selB = occB + downB;
+      const back = selB < selF - 1e-6 || (Math.abs(selB - selF) <= 1e-6 && nz < 0);
+      if (back) sideDown++;
+      const s = back ? -1 : 1, occ = back ? occB : occF;
+      const ao = 1 - occ / rays;
+      // 天空可见度：竖直向上一根 + 10° 锥内四根，任一命中即算遮挡
+      const ox = px + s * nx * EPS, oy = py + s * ny * EPS, oz = pz + s * nz * EPS + EPS;
+      let open = 0;
+      for (let i = 0; i < SKY; i++) {
+        let dx = 0, dy = 0, dz = 1;
+        if (i) { const ang = rot + (i - 1) * Math.PI / 2; dx = Math.cos(ang) * tilt; dy = Math.sin(ang) * tilt; dz = up; }
+        if (trace(ox, oy, oz, dx, dy, dz, skyDist, true) < 0) open++;
+      }
+      rayCount += SKY;
+      out[w * 2] = Math.round(Math.max(0, Math.min(1, ao)) * 255);
+      out[w * 2 + 1] = Math.round(open / SKY * 255);
     }
-    rayCount += rays * 2;
-    const selF = occF + downF, selB = occB + downB;
-    const back = selB < selF - 1e-6 || (Math.abs(selB - selF) <= 1e-6 && nz < 0);
-    if (back) sideDown++;
-    const s = back ? -1 : 1, occ = back ? occB : occF;
-    const ao = 1 - occ / rays;
-    // 天空可见度：竖直向上一根 + 10° 锥内四根，任一命中即算遮挡
-    const ox = px + s * nx * EPS, oy = py + s * ny * EPS, oz = pz + s * nz * EPS + EPS;
-    let open = 0;
-    for (let i = 0; i < SKY; i++) {
-      let dx = 0, dy = 0, dz = 1;
-      if (i) { const ang = rot + (i - 1) * Math.PI / 2; dx = Math.cos(ang) * tilt; dy = Math.sin(ang) * tilt; dz = up; }
-      if (trace(ox, oy, oz, dx, dy, dz, skyDist, true) < 0) open++;
-    }
-    rayCount += SKY;
-    out[w * 2] = Math.round(Math.max(0, Math.min(1, ao)) * 255);
-    out[w * 2 + 1] = Math.round(open / SKY * 255);
-    if ((w & 1023) === 0) Atomics.store(progress, slot, w - from);
+    Atomics.add(progress, slot, to - from);
   }
-  Atomics.store(progress, slot, to - from);
   return { rays: rayCount, sideDown };
 }
 

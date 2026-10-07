@@ -1,5 +1,6 @@
 import { StudioClient, poll } from './client.js?v=1.0.2';
-import { groups } from './settings.js?v=1.0.2';
+import { groups } from './settings.js?v=1.0.3';
+import { LOCAL_RENDER_PREFS, viewerPreferences } from './model.js?v=1.0.3';
 
 const client = new StudioClient(), params = new URLSearchParams(location.search);
 const mapOnly = params.has('overlay-map'), preview = mapOnly || params.has('studio-preview');
@@ -19,11 +20,12 @@ poll(async () => {
     const remote = await client.read();
     if (remote.revision !== revision) {
       if (remote.revision === 0 && !preview) {
-        const saved = await client.update(local);revision = saved.revision;previous = read();return;
+        const shared = { ...local, prefs: Object.fromEntries(Object.entries(local.prefs).filter(([key]) => !LOCAL_RENDER_PREFS.includes(key))) };
+        const saved = await client.update(shared);revision = saved.revision;previous = read();return;
       }
       // An untouched control session must not overwrite the viewer's saved preferences.
       if (remote.revision > 0 || preview) {
-        const effective = { ...remote, map: remote.map || local.map };
+        const effective = { ...remote, map: remote.map || local.map, prefs: viewerPreferences(remote.prefs, local.prefs, preview) };
         const signature = JSON.stringify([effective.view, effective.camera, effective.observer, effective.map, effective.prefs]);
         if (signature !== lastApplied) {
           if (!await window.matchStudio.apply(effective, mapOnly)) return;
@@ -36,7 +38,7 @@ poll(async () => {
       const patch = {};
       for (const key of ['view','camera','observer','map']) if (local[key] !== previous[key]) patch[key] = local[key];
       const prefs = {};
-      for (const key of prefKeys) if (local.prefs[key] !== previous.prefs[key]) prefs[key] = local.prefs[key];
+      for (const key of prefKeys) if (!LOCAL_RENDER_PREFS.includes(key) && local.prefs[key] !== previous.prefs[key]) prefs[key] = local.prefs[key];
       if (Object.keys(prefs).length) patch.prefs = prefs;
       if (Object.keys(patch).length) { const saved = await client.update(patch);revision = saved.revision; }
     }

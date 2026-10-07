@@ -12,7 +12,7 @@
     {key:'scene',label:'3D 场景',title:'3D 场景',hint:'拖动即生效 · 自动保存',groups:[
       ['地图与建筑',['mapstyle3dseg','s-maptex3d','s-walltrans','s-followwalltrans','s-floortrans']],
       ['人物模型与朝向',['model3dseg','direction3dseg','directionanchor3dseg','s-charsize']],
-      ['人物颜色',['color3dseg','s-visiblecolor3d','s-occludedcolor3d']],
+      ['阵营识别',['color3dseg','s-visiblecolor3d','s-occludedcolor3d']],
       ['第一视角',['s-fov','s-fpvheight','s-fpvtau']],
       ['渲染性能',['q3dseg','shadow3dseg','fpscapseg']]]},
     {key:'loot',label:'物资',title:'物资与容器',hint:'按需显示，减少地图遮挡',groups:[
@@ -51,7 +51,7 @@
       section.append(controls);panel.append(section);
     }
     if(page.key==='scene'){
-      const note=document.createElement('p');note.className='dock-note';note.textContent='透明度 0% 为实心，100% 为全透明。「墙体透明度」用于自由/俯视总览，「跟随视角墙体透明度」用于第一/第三跟随；墙较实时，墙后人物以队伍色剪影显示。';panel.append(note);
+      const note=document.createElement('p');note.className='dock-note';note.textContent='透明度 0% 为实心，100% 为全透明。「墙体透明度」用于自由/俯视总览，「跟随视角墙体透明度」用于第一/第三跟随；墙较实时，墙后人物以阵营色剪影显示：友军绿色、敌方红色。';panel.append(note);
     }
     content.append(panel);panels.push(panel);
   }

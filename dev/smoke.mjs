@@ -24,6 +24,7 @@ const HELP = `用法: node dev/smoke.mjs [选项]
   --port <端口>       远程调试端口，默认 9333
   --map <key>        检查指定地图（通过页面地图卡片切换）
   --quality <档位>   auto / perf / mid / high，默认 auto
+  --hardware         使用浏览器默认 GPU 路径，不强制 SwiftShader
   -h, --help          显示帮助
 
 输出: stdout 打印 JSON（各阶段每秒脚本/布局/样式耗时、帧率、错误列表）。
@@ -31,13 +32,14 @@ const HELP = `用法: node dev/smoke.mjs [选项]
 
 function parseArgs(argv) {
     const opt = { url: 'http://127.0.0.1:5173/', out: path.join(os.tmpdir(), 'ms-smoke'), chrome: '',
-        seconds: 6, width: 1600, height: 900, port: 9333, map: '', quality: 'auto' };
+        seconds: 6, width: 1600, height: 900, port: 9333, map: '', quality: 'auto', hardware: false };
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i], v = () => {
             if (i + 1 >= argv.length) throw new Error(`${a} 缺少参数值`);
             return argv[++i];
         };
         if (a === '-h' || a === '--help') { console.log(HELP); process.exit(0); }
+        else if (a === '--hardware') opt.hardware = true;
         else if (a === '--url') opt.url = v();
         else if (a === '--out') opt.out = v();
         else if (a === '--chrome') opt.chrome = v();
@@ -151,7 +153,7 @@ async function main() {
     const chrome = spawn(chromePath, [
         '--headless=new', `--remote-debugging-port=${opt.port}`, `--user-data-dir=${profile}`,
         `--window-size=${opt.width},${opt.height}`, '--no-first-run', '--no-default-browser-check',
-        '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--mute-audio', 'about:blank',
+        ...(opt.hardware ? [] : ['--use-angle=swiftshader', '--enable-unsafe-swiftshader']), '--mute-audio', 'about:blank',
     ], { stdio: 'ignore' });
     const errors = [], warnings = [], notFound = new Set();
     let code = 0;
@@ -192,6 +194,9 @@ async function main() {
             await sleep(500);
         }
         const phases = [];
+        await cdp.eval("document.getElementById('s-2d').click(); 0");
+        await sleep(600);
+        if (await cdp.eval("document.body.classList.contains('mode3d')")) throw new Error('2D 阶段仍处于 3D，不能采样为 2D');
         phases.push(await sample(cdp, '2d', opt.seconds, opt));
         const has3d = await cdp.eval('typeof NO3D !== "undefined" && !NO3D');
         if (has3d) {

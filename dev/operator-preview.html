@@ -1,0 +1,35 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>干员模型 · 效果检查</title>
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+<style>html,body{margin:0;height:100%;background:#101722;color:#dbe5ef;font:14px sans-serif}canvas{display:block;width:100%;height:100%}header{position:absolute;left:24px;top:20px;z-index:1}h1{font-size:20px;margin:0 0 10px}p{color:#9baebe}button{background:#233044;border:1px solid #53657c;color:#fff;padding:8px 14px;border-radius:7px;cursor:pointer}button.on{background:#dce5ef;color:#101722}</style></head>
+<body><header><h1>原版干员 · 手机简化效果</h1><p id="status">模型加载中…</p><div id="actions"></div></header><canvas></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+const renderer=new THREE.WebGLRenderer({canvas:document.querySelector('canvas'),antialias:true});renderer.setPixelRatio(1);renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;renderer.shadowMap.enabled=false;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#101722');const camera=new THREE.PerspectiveCamera(35,innerWidth/innerHeight,.05,100);camera.position.set(2.8,1.8,4.4);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.9,0);controls.update();
+scene.add(new THREE.HemisphereLight(0xc7dcff,0x36342b,2));const key=new THREE.DirectionalLight(0xffedda,3);key.position.set(3,5,4);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);const rim=new THREE.DirectionalLight(0x739cdb,2.2);rim.position.set(-3,3,-2);scene.add(rim);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x172232,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
+const {loadOperatorAsset,createRealisticOperator}=await import('/m3d/operator-model.js?v=1.1.0');
+const {OPERATOR_MODELS}=await import('/m3d/operator-catalog.js?v=1.1.0');
+const hero=new URLSearchParams(location.search).get('hero')||'威龙';
+const desktop=new URLSearchParams(location.search).get('device')==='desktop';
+const sample=desktop?OPERATOR_MODELS[hero]?.desktop:OPERATOR_MODELS[hero];
+if(!sample)throw new Error('没有此干员模型');
+document.querySelector('h1').textContent=hero+(desktop?' · 电脑模式':' · 手机模式');
+renderer.shadowMap.enabled=desktop;
+if(!await loadOperatorAsset(sample))throw new Error('模型加载失败');
+const actor=createRealisticOperator(sample);if(desktop)actor.root.traverse(o=>{if(o.isMesh&&!o.userData.radarExcludeFromSsao)o.castShadow=true;});const stage=new THREE.Group();stage.rotation.x=-Math.PI/2;stage.add(actor.root);scene.add(stage);
+let preset='Idle',sim=0,last=performance.now();
+const source={key:'preview',weapon:'通用步枪',alive:true};
+const modes={Idle:['持枪站立',0],Walk:['行走',1.8],Run:['奔跑',4],Sprint:['冲刺',6],Left:['侧移',1.8],Crouch:['倒地示意',0],Death:['阵亡过渡',0],Relaxed:['空手',0]};
+for(const [name,[label]]of Object.entries(modes)){const b=document.createElement('button');b.textContent=label;b.dataset.state=name;b.onclick=()=>{preset=name;for(const el of document.querySelectorAll('#actions button'))el.classList.toggle('on',el===b);};document.getElementById('actions').append(b);}
+document.getElementById('status').textContent='原版轮廓 · 无贴图 · 6 个色块 · 拖动旋转，滚轮缩放';
+window.operatorPreview={scene,model:actor.root,actor,renderer,camera,source,get preset(){return preset;}};
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;sim+=dt*modes[preset][1];source.dead=preset==='Death';source.alive=!source.dead;source.status_key=preset==='Crouch'?'down':null;source.weapon=preset==='Relaxed'?'空手':'通用步枪';
+// Move the logical subject and camera together during animation sampling, then
+// return the display to the turntable origin so locomotion can be inspected in place.
+const axis=preset==='Left'?'y':'x';actor.root.position[axis]=sim;stage.updateMatrixWorld(true);const offset=new THREE.Vector3();actor.root.getWorldPosition(offset);camera.position.add(offset);actor.update(source,camera,now,0,desktop?'high':'performance');camera.position.sub(offset);actor.root.position.set(0,0,0);stage.updateMatrixWorld(true);controls.update();renderer.render(scene,camera);requestAnimationFrame(frame);}
+requestAnimationFrame(frame);
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+</script></body></html>

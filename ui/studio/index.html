@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark"><title>Match Studio · 导播控制台</title><link rel="icon" href="data:,">
-<link rel="stylesheet" href="/ui/studio/console.css?v=1.0.2"></head>
+<link rel="stylesheet" href="/ui/studio/console.css?v=1.0.3"></head>
 <body><header class="topbar"><div class="brand"><a href="/">Match Studio</a><span>· 导播控制台</span><small class="private-badge">控制界面</small><select id="map-select" aria-label="选择地图"><option value="">载入地图…</option></select></div><div class="connection"><i id="connection-dot"></i><span id="connection">正在连接</span><span id="source-mode">等待数据</span><a href="/" target="_blank" rel="noopener">打开查看器 ↗</a></div></header>
 <main class="console-grid">
   <div class="column">
@@ -18,4 +18,4 @@
     <section class="preview-wrap" aria-label="输出预览"><div class="preview-label"><i></i><span id="preview-label">叠加层预览</span></div><div class="preview-stage"><iframe id="preview-viewer" src="/?studio-preview=1" title="查看器实时预览" tabindex="-1"></iframe><iframe id="preview-overlay" src="/overlay?transparent=1" title="透明叠加层实时预览" tabindex="-1"></iframe></div><div class="preview-footer"><span>实时预览</span><button id="preview-toggle" aria-pressed="false">透明背景</button></div></section>
     <section class="panel settings"><header><h2>设置</h2><span>实时同步到查看器与叠加层</span></header><div id="settings"></div></section>
   </div>
-</main><div id="notice" role="status" aria-live="polite" hidden></div><script type="module" src="/ui/studio/console.js?v=1.0.2"></script></body></html>
+</main><div id="notice" role="status" aria-live="polite" hidden></div><script type="module" src="/ui/studio/console.js?v=1.0.4"></script></body></html>

@@ -2,12 +2,12 @@
   "axis": "gltf_x=ue_x/100, gltf_y=ue_z/100, gltf_z=ue_y/100",
   "maps": {
     "az3": {
-      "file": "az3.terrain0908.0ab76c3b979e35b8.glb",
-      "rev": "0ab76c3b979e35b8",
-      "bytes": 99201884,
-      "tiles": 330,
+      "file": "az3.repaired.7f6f5e0bad011095.glb",
+      "rev": "7f6f5e0bad011095",
+      "bytes": 112449208,
+      "tiles": 383,
       "tris": 9888564,
-      "verts": 6609732,
+      "verts": 6609696,
       "yaw": 90,
       "place": [
         2192.0,
@@ -62,15 +62,15 @@
       ],
       "terrain_sample_stride_bytes": 4,
       "packed": {
-        "file": "az3.terrain0908.0ab76c3b979e35b8.tpk",
-        "rev": "a7a062753a85c27d",
-        "src_rev": "0ab76c3b979e35b8",
+        "file": "az3.repaired.7f6f5e0bad011095.tpk",
+        "rev": "b5c3e32cc078d24b",
+        "src_rev": "7f6f5e0bad011095",
         "format": "mstp1",
-        "bytes": 34594737,
-        "raw": 85536287,
+        "bytes": 34457221,
+        "raw": 85541824,
         "tris": 9888564,
         "verts": 6609696,
-        "chunks": 330,
+        "chunks": 383,
         "bake": true,
         "bake_params": {
           "rays_per_side": 12,
@@ -79,18 +79,42 @@
         }
       },
       "packed_light": {
-        "file": "az3.light.88ae949257ac69c0.tpk",
-        "rev": "88ae949257ac69c0",
-        "src_rev": "0ab76c3b979e35b8",
+        "file": "az3.light.cb256549d3ed6b20.tpk",
+        "rev": "cb256549d3ed6b20",
+        "src_rev": "7f6f5e0bad011095",
         "format": "mstp1",
-        "bytes": 29612292,
-        "raw": 63514985,
-        "tris": 6905493,
-        "verts": 5136596,
-        "chunks": 330,
+        "bytes": 29642693,
+        "raw": 63537467,
+        "tris": 6906882,
+        "verts": 5137209,
+        "chunks": 383,
         "bake": true,
-        "error_m": 0.04999866709113121,
+        "error_m": 0.049998216331005096,
         "lock_border": true
+      },
+      "terrain_source": {
+        "file": "az3.terrain0908.0ab76c3b979e35b8.glb",
+        "rev": "0ab76c3b979e35b8"
+      },
+      "terrain_repair": {
+        "version": "heightfield-xy-transpose-v1",
+        "tiles": 81,
+        "before": {
+          "tiles": 81,
+          "samples": 8304,
+          "median": 5.289091110229492,
+          "mean": 6.927855259624543,
+          "max": 49.04599356651306,
+          "above5cm": 7785
+        },
+        "after": {
+          "tiles": 81,
+          "samples": 8273,
+          "median": 0.000133514404296875,
+          "mean": 0.0002316789639576615,
+          "max": 0.0028133392333984375,
+          "above5cm": 0
+        }
       }
     },
     "bks": {
@@ -186,10 +210,10 @@
       }
     },
     "cgxg": {
-      "file": "cgxg.terrain0908.a06b48ce4803f563.glb",
-      "rev": "a06b48ce4803f563",
-      "bytes": 70694688,
-      "tiles": 488,
+      "file": "cgxg.repaired.2d545ae5e86a7a67.glb",
+      "rev": "2d545ae5e86a7a67",
+      "bytes": 79442788,
+      "tiles": 582,
       "tris": 7381701,
       "verts": 4348544,
       "yaw": 0,
@@ -246,15 +270,15 @@
       ],
       "terrain_sample_stride_bytes": 4,
       "packed": {
-        "file": "cgxg.terrain0908.a06b48ce4803f563.tpk",
-        "rev": "254c156ae43ca7f8",
-        "src_rev": "a06b48ce4803f563",
+        "file": "cgxg.repaired.2d545ae5e86a7a67.tpk",
+        "rev": "97f4131782663e59",
+        "src_rev": "2d545ae5e86a7a67",
         "format": "mstp1",
-        "bytes": 26424077,
-        "raw": 59240870,
+        "bytes": 26443960,
+        "raw": 59250637,
         "tris": 7381701,
         "verts": 4348544,
-        "chunks": 488,
+        "chunks": 582,
         "bake": true,
         "bake_params": {
           "rays_per_side": 12,
@@ -263,27 +287,55 @@
         }
       },
       "packed_light": {
-        "file": "cgxg.light.49cd77bcfb1da849.tpk",
-        "rev": "49cd77bcfb1da849",
-        "src_rev": "a06b48ce4803f563",
+        "file": "cgxg.light.55f7b8d61ca433f6.tpk",
+        "rev": "55f7b8d61ca433f6",
+        "src_rev": "2d545ae5e86a7a67",
         "format": "mstp1",
-        "bytes": 24235031,
-        "raw": 44463448,
-        "tris": 5346807,
-        "verts": 3339770,
-        "chunks": 488,
+        "bytes": 24465917,
+        "raw": 44784249,
+        "tris": 5394115,
+        "verts": 3363393,
+        "chunks": 582,
         "bake": true,
-        "error_m": 0.04999970272183418,
+        "error_m": 0.04999934881925583,
         "lock_border": true
+      },
+      "terrain_source": {
+        "file": "cgxg.terrain0908.a06b48ce4803f563.glb",
+        "rev": "a06b48ce4803f563"
+      },
+      "terrain_repair": {
+        "version": "heightfield-xy-transpose-v1",
+        "tiles": 144,
+        "before": {
+          "tiles": 144,
+          "samples": 16533,
+          "median": 13.20269775390625,
+          "mean": 22.555681313833798,
+          "max": 204.47291564941406,
+          "above5cm": 16472
+        },
+        "after": {
+          "tiles": 144,
+          "samples": 16533,
+          "median": 0.00016021728515625,
+          "mean": 0.00021281916289207529,
+          "max": 0.0020904541015625,
+          "above5cm": 0
+        },
+        "welded": {
+          "points": 121,
+          "maxAdjustment": 0.31732177734375
+        }
       }
     },
     "cxjy": {
-      "file": "cxjy.terrain0908.a21a53fc4bd9e0f8.glb",
-      "rev": "a21a53fc4bd9e0f8",
-      "bytes": 71349588,
-      "tiles": 132,
+      "file": "cxjy.repaired.da12f7801ea296f6.glb",
+      "rev": "da12f7801ea296f6",
+      "bytes": 80789616,
+      "tiles": 140,
       "tris": 7158532,
-      "verts": 4718899,
+      "verts": 4718859,
       "yaw": 180,
       "place": [
         560.0,
@@ -338,15 +390,15 @@
       ],
       "terrain_sample_stride_bytes": 4,
       "packed": {
-        "file": "cxjy.terrain0908.a21a53fc4bd9e0f8.tpk",
-        "rev": "1c9d54ec4a25fc98",
-        "src_rev": "a21a53fc4bd9e0f8",
+        "file": "cxjy.repaired.da12f7801ea296f6.tpk",
+        "rev": "ef16407a610336c2",
+        "src_rev": "da12f7801ea296f6",
         "format": "mstp1",
-        "bytes": 25094151,
-        "raw": 61502189,
+        "bytes": 25096387,
+        "raw": 61503022,
         "tris": 7158532,
         "verts": 4718859,
-        "chunks": 132,
+        "chunks": 140,
         "bake": true,
         "bake_params": {
           "rays_per_side": 12,
@@ -355,25 +407,49 @@
         }
       },
       "packed_light": {
-        "file": "cxjy.light.95522cb2b79f7e07.tpk",
-        "rev": "95522cb2b79f7e07",
-        "src_rev": "a21a53fc4bd9e0f8",
+        "file": "cxjy.light.2337c72dd4a5eb39.tpk",
+        "rev": "2337c72dd4a5eb39",
+        "src_rev": "da12f7801ea296f6",
         "format": "mstp1",
-        "bytes": 19701738,
-        "raw": 43432579,
-        "tris": 4673072,
-        "verts": 3517119,
-        "chunks": 132,
+        "bytes": 19722990,
+        "raw": 43419718,
+        "tris": 4671698,
+        "verts": 3516518,
+        "chunks": 140,
         "bake": true,
         "error_m": 0.04999883845448494,
         "lock_border": true
+      },
+      "terrain_source": {
+        "file": "cxjy.terrain0908.a21a53fc4bd9e0f8.glb",
+        "rev": "a21a53fc4bd9e0f8"
+      },
+      "terrain_repair": {
+        "version": "heightfield-xy-transpose-v1",
+        "tiles": 12,
+        "before": {
+          "tiles": 12,
+          "samples": 1063,
+          "median": 25.273733139038086,
+          "mean": 35.04739538050999,
+          "max": 99.03135108947754,
+          "above5cm": 1058
+        },
+        "after": {
+          "tiles": 12,
+          "samples": 1067,
+          "median": 0.00041961669921875,
+          "mean": 0.0005050711019528504,
+          "max": 0.002002716064453125,
+          "above5cm": 0
+        }
       }
     },
     "daba": {
-      "file": "daba.terrain0908.25efaea6a4a25c3c.glb",
-      "rev": "25efaea6a4a25c3c",
-      "bytes": 51222564,
-      "tiles": 226,
+      "file": "daba.repaired.3a7be0b23d0e31b7.glb",
+      "rev": "3a7be0b23d0e31b7",
+      "bytes": 57686772,
+      "tiles": 274,
       "tris": 5293593,
       "verts": 3219191,
       "yaw": 0,
@@ -430,15 +506,15 @@
       ],
       "terrain_sample_stride_bytes": 4,
       "packed": {
-        "file": "daba.terrain0908.25efaea6a4a25c3c.tpk",
-        "rev": "e0d354cfff53b15b",
-        "src_rev": "25efaea6a4a25c3c",
+        "file": "daba.repaired.3a7be0b23d0e31b7.tpk",
+        "rev": "39e9f2fcc766a5fd",
+        "src_rev": "3a7be0b23d0e31b7",
         "format": "mstp1",
-        "bytes": 18890395,
-        "raw": 42673297,
+        "bytes": 18944635,
+        "raw": 42678291,
         "tris": 5293593,
         "verts": 3219191,
-        "chunks": 226,
+        "chunks": 274,
         "bake": true,
         "bake_params": {
           "rays_per_side": 12,
@@ -447,27 +523,51 @@
         }
       },
       "packed_light": {
-        "file": "daba.light.3fd2e3cc5dbb4678.tpk",
-        "rev": "3fd2e3cc5dbb4678",
-        "src_rev": "25efaea6a4a25c3c",
+        "file": "daba.light.9d9827d7b7313c76.tpk",
+        "rev": "9d9827d7b7313c76",
+        "src_rev": "3a7be0b23d0e31b7",
         "format": "mstp1",
-        "bytes": 17187405,
-        "raw": 31829675,
-        "tris": 3775779,
-        "verts": 2471509,
-        "chunks": 226,
+        "bytes": 17367707,
+        "raw": 32070758,
+        "tris": 3809254,
+        "verts": 2488022,
+        "chunks": 274,
         "bake": true,
-        "error_m": 0.04999988153576851,
+        "error_m": 0.049999237060546875,
         "lock_border": true
+      },
+      "terrain_source": {
+        "file": "daba.terrain0908.25efaea6a4a25c3c.glb",
+        "rev": "25efaea6a4a25c3c"
+      },
+      "terrain_repair": {
+        "version": "heightfield-xy-transpose-v1",
+        "tiles": 48,
+        "before": {
+          "tiles": 48,
+          "samples": 5143,
+          "median": 16.943695068359375,
+          "mean": 22.346700226637076,
+          "max": 117.58805847167969,
+          "above5cm": 5079
+        },
+        "after": {
+          "tiles": 48,
+          "samples": 5143,
+          "median": 0.000213623046875,
+          "mean": 0.00026725132641986074,
+          "max": 0.00128936767578125,
+          "above5cm": 0
+        }
       }
     },
     "htjd": {
-      "file": "htjd.terrain0908.db39b5e505b6fe28.glb",
-      "rev": "db39b5e505b6fe28",
-      "bytes": 38834100,
-      "tiles": 162,
+      "file": "htjd.repaired.8152a57c854ac9a4.glb",
+      "rev": "8152a57c854ac9a4",
+      "bytes": 43910052,
+      "tiles": 187,
       "tris": 3923517,
-      "verts": 2531489,
+      "verts": 2531487,
       "yaw": 0,
       "place": [
         32.0,
@@ -522,15 +622,15 @@
       ],
       "terrain_sample_stride_bytes": 4,
       "packed": {
-        "file": "htjd.terrain0908.db39b5e505b6fe28.tpk",
-        "rev": "9e1d1edc93f92215",
-        "src_rev": "db39b5e505b6fe28",
+        "file": "htjd.repaired.8152a57c854ac9a4.tpk",
+        "rev": "00c795d91cfe98fa",
+        "src_rev": "8152a57c854ac9a4",
         "format": "mstp1",
-        "bytes": 13409892,
-        "raw": 32922008,
+        "bytes": 13361020,
+        "raw": 32924634,
         "tris": 3923517,
         "verts": 2531487,
-        "chunks": 162,
+        "chunks": 187,
         "bake": true,
         "bake_params": {
           "rays_per_side": 12,
@@ -539,18 +639,46 @@
         }
       },
       "packed_light": {
-        "file": "htjd.light.6886f26bfbd16107.tpk",
-        "rev": "6886f26bfbd16107",
-        "src_rev": "db39b5e505b6fe28",
+        "file": "htjd.light.036cbb861b579a0b.tpk",
+        "rev": "036cbb861b579a0b",
+        "src_rev": "8152a57c854ac9a4",
         "format": "mstp1",
-        "bytes": 11652574,
-        "raw": 23554561,
-        "tris": 2625975,
-        "verts": 1895613,
-        "chunks": 162,
+        "bytes": 11735668,
+        "raw": 23680183,
+        "tris": 2642051,
+        "verts": 1903627,
+        "chunks": 187,
         "bake": true,
-        "error_m": 0.049999307841062546,
+        "error_m": 0.049998827278614044,
         "lock_border": true
+      },
+      "terrain_source": {
+        "file": "htjd.terrain0908.db39b5e505b6fe28.glb",
+        "rev": "db39b5e505b6fe28"
+      },
+      "terrain_repair": {
+        "version": "heightfield-xy-transpose-v1",
+        "tiles": 42,
+        "before": {
+          "tiles": 42,
+          "samples": 4454,
+          "median": 11.162078857421875,
+          "mean": 11.788877047815824,
+          "max": 40.67369079589844,
+          "above5cm": 4326
+        },
+        "after": {
+          "tiles": 42,
+          "samples": 4454,
+          "median": 0.0001220703125,
+          "mean": 0.00018166660673692186,
+          "max": 0.0013885498046875,
+          "above5cm": 0
+        },
+        "welded": {
+          "points": 23,
+          "maxAdjustment": 0.09313201904296875
+        }
       }
     }
   },

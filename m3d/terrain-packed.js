@@ -81,7 +81,7 @@ export function decodeTerrainPack(bytes) {
 }
 
 /** 下载（带进度，按线上字节计）→ 解压 → 解码。progress(got, total) 与 GLB 路径同语义。 */
-export async function loadTerrainPack(url, progress, signal) {
+async function loadTerrainPackLocal(url, progress, signal) {
   const response = await fetch(url, { cache: 'force-cache', signal });
   if (!response.ok) throw new Error('地形包 HTTP ' + response.status);
   const total = Number(response.headers.get('Content-Length') || 0);
@@ -103,4 +103,42 @@ export async function loadTerrainPack(url, progress, signal) {
   }
   progress?.(raw.length, raw.length);
   return decodeTerrainPack(await gunzipIfNeeded(raw));
+}
+
+// Download, inflate and decode away from the UI thread. A map switch terminates
+// the worker, so an obsolete map cannot finish decoding in the background.
+export function loadTerrainPack(url, progress, signal) {
+  if (signal?.aborted) return Promise.reject(signal.reason);
+  if (typeof Worker !== 'function') return loadTerrainPackLocal(url, progress, signal);
+  let worker;
+  try { worker = new Worker(new URL(import.meta.url), { type: 'module', name: 'terrain-decoder' }); }
+  catch { return loadTerrainPackLocal(url, progress, signal); }
+  return new Promise((resolve, reject) => {
+    let sent = false, settled = false;
+    const cleanup = () => { clearTimeout(timer);signal?.removeEventListener('abort', abort);worker.onmessage = null;worker.onerror = null;worker.terminate(); };
+    const finish = (error, pack) => { if (settled) return;settled = true;cleanup();error ? reject(error) : resolve(pack); };
+    const abort = () => finish(signal.reason);
+    const fallback = () => { if (settled) return;settled = true;cleanup();loadTerrainPackLocal(url, progress, signal).then(resolve, reject); };
+    const timer = setTimeout(fallback, 4000);
+    signal?.addEventListener('abort', abort, { once: true });
+    worker.onmessage = ({ data }) => {
+      if (settled) return;
+      if (data.ready && !sent) { sent = true;clearTimeout(timer);worker.postMessage({ url }); }
+      else if (data.progress) progress?.(...data.progress);
+      else if (data.error) finish(new Error(data.error));
+      else if (data.pack) finish(null, data.pack);
+    };
+    worker.onerror = event => { event.preventDefault?.();if (sent) finish(new Error('地形后台解码失败'));else fallback(); };
+  });
+}
+
+if (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope) {
+  self.onmessage = async ({ data }) => {
+    try {
+      const pack = await loadTerrainPackLocal(data.url, (...progress) => self.postMessage({ progress }));
+      const transfer = [pack.position.buffer, pack.index.buffer];if (pack.bake) transfer.push(pack.bake.buffer);
+      self.postMessage({ pack }, transfer);
+    } catch (error) { self.postMessage({ error: error.message || '地形解码失败' }); }
+  };
+  self.postMessage({ ready: true });
 }

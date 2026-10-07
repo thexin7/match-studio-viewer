@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { loadOperatorAsset, operatorAssetState, createRealisticOperator } from './operator-model.js?v=1.1.0';
+import { operatorDefinition, characterDetail } from './character-detail.js?v=1.1.0';
 export const MODEL_IDS=['tactical','mannequin','beacon','capsule'];
 const CAPSULE_FOOT_Z=-.9;
 const GEAR_COLORS=[0x9ca3af,0xe5e7eb,0x67d783,0x5aa3ff,0xb778f2,0xf1b44c,0xf15b64];
@@ -91,19 +93,33 @@ export function buildCharacterModel(style,options={}){
 
 export function syncCharacterModel(entity,style,options={}){
  const id=MODEL_IDS.includes(style)?style:'tactical';
+ const base=id==='tactical'?operatorDefinition(options.hero):null;
+ const preferred=options.quality==='high'&&base?.desktop?base.desktop:base;
+ if(preferred&&operatorAssetState(preferred)==='idle')loadOperatorAsset(preferred);
+ if(base&&preferred!==base&&operatorAssetState(preferred)==='error'&&operatorAssetState(base)==='idle')loadOperatorAsset(base);
+ let definition=preferred&&operatorAssetState(preferred)==='ready'?preferred:base;
+ if(base&&operatorAssetState(definition)!=='ready'&&entity.operatorSource?.id===base.id)definition=entity.operatorSource;
+ const realistic=!!definition&&operatorAssetState(definition)==='ready';
+ const assetKey=realistic?definition.src:null;
  const helmetLv=options.helmetLv|0,armorLv=options.armorLv|0,bagLv=options.bagLv|0;
  // 每帧都会调用：输入不变就不再逐个改 mesh 的可见性、缩放与材质颜色
- const sig=[id,options.scale,options.visibleColor,options.occludedColor,options.occludedOpacity,options.showHeading,options.directionStyle,options.directionAnchor,helmetLv,armorLv,bagLv].join('|');
+ const sig=[id,assetKey,options.scale,options.visibleColor,options.occludedColor,options.occludedOpacity,options.showHeading,options.directionStyle,options.directionAnchor,helmetLv,armorLv,bagLv].join('|');
  if(entity.modelSig===sig)return;
  entity.modelSig=sig;
- if(entity.modelStyle!==id){
+ if(entity.modelStyle!==id||entity.operatorAssetKey!==assetKey){
    if(entity.customModel){entity.root.remove(entity.customModel.root);entity.customModel.dispose();entity.customModel=null;}
    if(entity.customOccludedModel){entity.root.remove(entity.customOccludedModel.root);entity.customOccludedModel.dispose();entity.customOccludedModel=null;}
-   if(id!=='capsule'){
+   if(realistic){
+     entity.customModel=createRealisticOperator(definition);entity.root.add(entity.customModel.root);
+   }else if(id!=='capsule'){
      entity.customModel=buildCharacterModel(id);entity.root.add(entity.customModel.root);
      entity.customOccludedModel=buildCharacterModel(id,{occluded:true});entity.root.add(entity.customOccludedModel.root);
    }
    entity.modelStyle=id;
+   entity.operatorRealistic=realistic;
+   entity.operatorAssetKey=assetKey;
+   entity.operatorSource=realistic?definition:null;
+   entity.characterDetail=-1;
    if(entity.charAnim)entity.charAnim.applied=-1;
  }
  const scale=THREE.MathUtils.clamp(Number(options.scale)||1,.5,2);
@@ -130,6 +146,7 @@ export function syncCharacterModel(entity,style,options={}){
  // 掩体后（x 光）一遍的透明度：队伍色模式下用更淡的同色，区分「可见 / 被挡」
  const occludedOpacity=Number.isFinite(options.occludedOpacity)?options.occludedOpacity:null;
  if(occludedOpacity!=null){
+   entity.customModel?.setOcclusion?.(occludedColor,occludedOpacity);
   entity.customOccludedModel?.setOpacity(occludedOpacity);
   if(entity.occCapsule)entity.occCapsule.material.opacity=Math.min(1,occludedOpacity*.85);
   for(const pair of Object.values(entity.headings||{}))pair.occluded.material.opacity=Math.min(1,occludedOpacity+.08);
@@ -188,7 +205,31 @@ function alivePose(a,dt,animate){
  return p;
 }
 
-export function animateCharacterModel(entity,src,camera,now=performance.now()){
+const _viewPosition=new THREE.Vector3(),_projectedPosition=new THREE.Vector3();
+export function animateCharacterModel(entity,src,camera,now=performance.now(),viewportHeight=900,quality='balanced'){
+ entity.root.getWorldPosition(_viewPosition);
+ _viewPosition.applyMatrix4(camera.matrixWorldInverse);
+ const depth=-_viewPosition.z,scale=entity.capsule.scale.z;
+ const pixels=depth>0?1.8*scale*camera.projectionMatrix.elements[5]*viewportHeight/(2*(camera.isOrthographicCamera?1:depth)):0;
+ _projectedPosition.copy(_viewPosition).applyMatrix4(camera.projectionMatrix);
+ const extent=pixels/Math.max(1,viewportHeight);
+ const inView=entity.root.visible&&depth>0&&Math.abs(_projectedPosition.x)<1.1+extent/Math.max(.1,camera.aspect||1)&&Math.abs(_projectedPosition.y)<1.1+extent;
+ const detail=characterDetail(pixels,entity.characterDetail,quality);
+ entity.characterDetail=detail;
+ const simplified=detail===2&&entity.modelStyle==='tactical';
+ if(entity.customModel)entity.customModel.root.visible=inView&&!simplified;
+ if(entity.customOccludedModel)entity.customOccludedModel.root.visible=inView&&!simplified;
+ entity.capsule.visible=inView&&(entity.modelStyle==='capsule'||simplified);
+ if(entity.occCapsule)entity.occCapsule.visible=entity.capsule.visible;
+ if(!inView||simplified){
+   // Reset velocity history on re-entry: time spent culled is not a movement sample.
+   if(entity.charAnim)entity.charAnim.t=0;
+   return;
+ }
+ if(entity.customModel?.realistic){
+   entity.customModel.update(src,camera,now,detail,quality);
+   return;
+ }
  const rig=entity.customModel?.rig,rigOcc=entity.customOccludedModel?.rig;
  if(!rig)return;
  const a=entity.charAnim||(entity.charAnim={key:null,t:0,x:0,y:0,yaw:0,speed:0,yawRate:0,phase:0,breath:Math.random()*6,downW:0,deadW:0,applied:-1});
@@ -209,7 +250,7 @@ export function animateCharacterModel(entity,src,camera,now=performance.now()){
  const cam=camera.position,cx=pos.x-cam.x,cy=pos.y-cam.y,cz=pos.z-cam.z,dist=Math.hypot(cx,cy,cz);
  const e=camera.matrixWorld.elements;
  const behind=dist>4&&(-e[8]*cx-e[9]*cy-e[10]*cz)<-.2*dist;
- const animate=entity.root.visible&&dist<=ANIM_LOD_M&&!behind;
+ const animate=entity.root.visible&&(detail===0||dist<=ANIM_LOD_M)&&!behind;
  if(!animate){
    // 不动画时直接落到目标状态；只在状态变化时摆一次姿态
    a.deadW=dead?1:0;a.downW=down?1:0;

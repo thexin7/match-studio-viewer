@@ -147,7 +147,7 @@ export function createHud(canvas) {
             const it = items[i];
             const scale = it.scale || 1;
             const p = project(camera, it.x, it.y, it.z + HEAD_ABOVE_CENTER_M * scale);
-            const color = it.alert ? alertCss : it.down ? downCss : css(it.color);
+            const color = it.alert ? alertCss : css(it.color);
             if (!p.on) {
                 if (it.enemy && opt.warn && !it.spawn && it.dist != null && it.dist <= opt.warnD) {
                     let ax = p.cx, ay = -p.cy;
@@ -436,7 +436,7 @@ export function createHud(canvas) {
             const px = (dx * rx + dy * ry) * k, py = -(dx * fx + dy * fy) * k;
             if (px * px + py * py > R * R) continue;
             const x = cx + px, y = cy + py;
-            const col = it.alert ? alertCss : it.down ? downCss : css(it.color);
+            const col = it.alert ? alertCss : css(it.color);
             c.globalAlpha = it.stale ? 0.45 : 1;
             c.beginPath(); c.arc(x, y, it.enemy ? (it.ai ? 2.6 : 3.4) : 3, 0, Math.PI * 2);
             if (it.enemy) {

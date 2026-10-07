@@ -84,3 +84,11 @@ export class ProximityEvents {
     return this.events;
   }
 }
+// Device rendering preferences belong to each standalone viewer. Embedded OBS
+// views still follow the console's shared rendering preferences.
+export const LOCAL_RENDER_PREFS = ['q3d', 'shadow3d', 'fpscap'];
+export function viewerPreferences(remote, local, embedded = false) {
+  const prefs = { ...remote };
+  if (!embedded) for (const key of LOCAL_RENDER_PREFS) if (local[key] !== undefined) prefs[key] = local[key];
+  return prefs;
+}

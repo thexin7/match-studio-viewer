@@ -35,7 +35,7 @@ function scan(text) {
 }
 
 export function upsertPacked(text, key, packed, field = 'packed') {
-  if (!['packed', 'packed_light'].includes(field)) throw new Error('不支持的地形清单字段');
+  if (!['packed', 'packed_light', 'file', 'rev', 'bytes', 'verts', 'tiles', 'terrain_source', 'terrain_repair'].includes(field)) throw new Error('不支持的地形清单字段');
   const eol = text.includes('\r\n') ? '\r\n' : '\n';
   const spans = scan(text);
   const obj = spans.get('/maps/' + key);

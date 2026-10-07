@@ -15,9 +15,15 @@ export function readGlb(buf) {
   if (!json || binOff < 0) throw new Error('GLB 缺少 JSON/BIN 块');
   const view = (ai, Ctor, comps) => {
     const a = json.accessors[ai], bv = json.bufferViews[a.bufferView];
-    const start = binOff + (bv.byteOffset || 0) + (a.byteOffset || 0), bytes = a.count * comps * Ctor.BYTES_PER_ELEMENT;
-    if (bv.byteStride && bv.byteStride !== comps * Ctor.BYTES_PER_ELEMENT) throw new Error('不支持交错的 bufferView');
+    const element = comps * Ctor.BYTES_PER_ELEMENT, stride = bv.byteStride || element;
+    const start = binOff + (bv.byteOffset || 0) + (a.byteOffset || 0), bytes = a.count ? (a.count - 1) * stride + element : 0;
+    if (stride < element) throw new Error('无效 bufferView 步长');
     if (start + bytes > binOff + binLen) throw new Error('accessor 越界');
+    if (stride !== element) {
+      const packed = new Uint8Array(a.count * element);
+      for (let v = 0; v < a.count; v++) packed.set(buf.subarray(start + v * stride, start + v * stride + element), v * element);
+      return new Ctor(packed.buffer);
+    }
     // 拷贝一份：Buffer 的字节偏移不保证 2/4 字节对齐
     return new Ctor(buf.buffer.slice(buf.byteOffset + start, buf.byteOffset + start + bytes));
   };

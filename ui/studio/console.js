@@ -1,6 +1,6 @@
 import { defaultStudio, deriveHUD, characters, clock, replayInfo, ProximityEvents } from './model.js?v=1.0.2';
 import { StudioClient, request, poll } from './client.js?v=1.0.2';
-import { groups } from './settings.js?v=1.0.2';
+import { groups } from './settings.js?v=1.0.3';
 
 const $ = id => document.getElementById(id), client = new StudioClient();
 let settings = defaultStudio(), snapshot = null, status = null, connected = false, busy = false, seeking = false;
@@ -81,7 +81,12 @@ for (const [index, group] of groups.entries()) {
       input.addEventListener('input', () => { out.textContent = `${input.value}${unit}`; });row.append(input, out);
     }
     input.id = `pref-${key}`;
-    input.addEventListener('change', () => change({ prefs: { [key]: type === 'toggle' ? Number(input.checked) : typeof initial === 'number' ? Number(input.value) : input.value } }));
+    input.addEventListener('change', () => {
+      const value=type === 'toggle' ? Number(input.checked) : typeof initial === 'number' ? Number(input.value) : input.value;
+      const prefs={ [key]:value };
+      if(key==='q3d'&&(value==='perf'||value==='high'))Object.assign(prefs,{fpscap:value==='perf'?30:60,shadow3d:value==='perf'?'off':'auto'});
+      change({prefs});
+    });
     details.append(row);
   }
   $('settings').append(details);
@@ -93,6 +98,9 @@ function renderPeople(hud) {
   $('people-count').textContent = `${hud.people.length} 个已识别单位`;
   const rows = hud.people.map(e => {
     const button = document.createElement('button');button.className = `person${settings.observer === e.key ? ' on' : ''}`;button.dataset.key = e.key;button.setAttribute('aria-pressed', String(settings.observer === e.key));
+    const hostile=hud.opponents.some(op=>op.key===e.key);
+    const friendly=e.key===hud.observer?.key||(hud.observer?.team>0&&e.team===hud.observer.team)||(hud.observer?.kind==='self'&&e.kind==='mate');
+    button.style.setProperty('--faction',hostile?'#ff4058':friendly?'#37e08a':'#8c96a8');
     const initial = document.createElement('span');initial.className = 'initial';initial.textContent = (e.hero || e.name || '？').slice(0, 1);
     const identity = document.createElement('span');identity.className = 'identity';
     const name = document.createElement('b');name.textContent = e.name || e.hero || '未知干员';
