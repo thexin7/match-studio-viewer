@@ -19,8 +19,12 @@
 */
 
 import * as THREE from 'three';
-import {syncCharacterModel} from './character-models.js?v=1.1.0';
+import {syncCharacterModel,animateCharacterModel} from './character-models.js?v=1.4.0';
 import {aimDirection,splitSurfaceIndices} from './gateway-pose.js?v=1.1.0';
+import { buildMapChunksAsync } from './map-chunks.js?v=1.4.0';
+import { buildMapTexture } from './map-texture.js?v=1.4.0';
+import { createHud } from './korr-hud.js?v=1.4.0';
+import { createPoiLayer } from './poi-3d.js?v=1.4.0';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
@@ -34,14 +38,25 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 // ============================================================================
 //  常量
 // ============================================================================
-const TEAM_COLORS = [
-    0xf87171, 0x60a5fa, 0x4ade80, 0xfacc15,
-    0xfb923c, 0xc084fc, 0xf472b6, 0x22d3ee,
-    0xa3e635, 0xe879f9, 0x34d399, 0xfbbf24
-];
+/* 色板由页面通过 gateway.setPalette() 下发，与 2D 态势图同一份：同一个人在 2D/3D
+   里颜色一致。以前 3D 自带一套色板，2 队在 2D 是橙色、3D 是蓝色，3 队在 3D 是绿色，
+   与队友绿撞色。下面的默认值只在页面未下发时兜底。 */
+const PALETTE = {
+    teams: [0xff5f6d, 0xff9f43, 0xffd54f, 0xc792ea, 0x4dd0e1, 0xf48fb1, 0xeceff1, 0xff8a65],
+    self: 0x37e08a, mate: 0x4c8dff, ai: 0xc8b07a, unknown: 0x8c96a8,
+    alert: 0xff2d3f, down: 0xffcf4d, dead: 0x475569,
+};
+function setPalette(p) {
+    if (!p) return;
+    if (Array.isArray(p.teams) && p.teams.length) {
+        const teams = p.teams.map(c => _prefColorHex(c, null)).filter(c => c != null);
+        if (teams.length) PALETTE.teams = teams;
+    }
+    for (const key of ['self', 'mate', 'ai', 'unknown', 'alert', 'down']) PALETTE[key] = _prefColorHex(p[key], PALETTE[key]);
+}
 function teamColor(team) {
-    if (!team || team < 1) return 0x808080;
-    return TEAM_COLORS[(team - 1) % TEAM_COLORS.length];
+    if (!team || team < 1) return PALETTE.unknown;
+    return PALETTE.teams[(team - 1) % PALETTE.teams.length];
 }
 const QUALITY_COLORS = [0x9ca3af, 0xffffff, 0x22c55e, 0x3b82f6, 0xa855f7, 0xf59e0b, 0xef4444];
 function qualityColor(q) {
@@ -68,8 +83,17 @@ function ueToThreeZ(uz) { return (uz || 0) * UE_TO_M; }
 /* UE yaw (degrees) → three.js rotation.z (radians, 已翻符号) */
 function ueYawToThreeRotZ(uyawDeg) { return -(uyawDeg || 0) * Math.PI / 180; }
 
-// 已加载的地图 mesh (指针, 换图时移除)
+// 已加载的地图：THREE.Group，子节点是分块 Mesh（userData.radarMapChunk），共享地面/墙两个材质
 let mapMesh = null;
+let mapBounds = null;        // 当前（或正在切块的）地图包围盒，装图时同步给出，fit 不必等切块完成
+let mapInstallSeq = 0;
+/* 官方底图投影：纹理按「地图 key + 缩放级」缓存，开关只改强度 uniform 不重复下载；换图时释放。 */
+const mapTex = { enabled: true, key: null, entries: new Map(), pending: new Map(), abort: null };
+/* 静态缓存阴影（见 _updateLightingRig）。shadowPref：auto / on / off。 */
+let shadowPref = 'auto';
+const shadowRig = { center: new THREE.Vector3(), span: 0, valid: false, lastAt: 0, casterSig: NaN,
+    right: new THREE.Vector3(), up: new THREE.Vector3(), basisReady: false,
+    updates: 0, rateAt: 0, rate: 0, sigAt: 0 };
 let mapMeshWire = null;
 let currentMapName = null;
 let mapLoading = false;
@@ -102,17 +126,23 @@ let environmentRenderTarget = null;
 let activeQualityProfile = null;
 let requestedRenderQuality = 'auto';
 let autoQualityCeiling = null;
-let gatewaySurfacePrefs = {walltrans:78, floortrans:0};
+/* 墙体透明度按镜头模式取值：总览（自由/俯视）用 walltrans，方便看穿建筑找人；
+   跟随视角（第一/第三跟随）用 followwalltrans（默认实心），观感接近游戏本身。
+   不透明度 ≥ 50% 的墙会写深度：墙后人物改由「掩体后」x 光剪影显示，既保留
+   建筑纵深又不丢人。更透明的墙不写深度，人物照常绘制、透过墙可见。 */
+let gatewaySurfacePrefs = {walltrans:78, floortrans:0, followwalltrans:0};
 function applyGatewaySurfaceOpacity() {
     if (!mapMesh?.userData.gatewayTransparentWalls) return;
     const materials = _getRadarMapMaterials();
-    [gatewaySurfacePrefs.floortrans, gatewaySurfacePrefs.walltrans].forEach((value, index) => {
+    const wall = cameraMode === CAMERA_MODES.FREE ? gatewaySurfacePrefs.walltrans : gatewaySurfacePrefs.followwalltrans;
+    [gatewaySurfacePrefs.floortrans, wall].forEach((value, index) => {
         const material = materials[index]; if (!material) return;
         const opacity = 1 - value / 100, transparent = opacity < 1;
         if (material.transparent !== transparent) { material.transparent = transparent; material.needsUpdate = true; }
         material.opacity = opacity; material.visible = opacity > 0;
-        material.depthWrite = !transparent;
+        material.depthWrite = opacity >= 0.5;
     });
+    _requestShadowUpdate();     // 墙完全透明时不投影，缓存的阴影图要重画
 }
 let indoorClarityEnabled = false; // Gateway uses transparent walls; no camera cutout.
 let indoorClarityActive = false;
@@ -212,7 +242,9 @@ const RENDER_QUALITY_PROFILES = Object.freeze({
         id: 'high', pixelRatioCap: 1.60, postPixelRatioCap: 1.10, ssaoScale: 0.75,
         exposure: 0.95, ambient: 0.12, hemisphere: 0.20, keyLight: 1.38, fillLight: 0.18,
         environment: true, environmentIntensity: 0.24,
-        shadows: true, shadowMapSize: 1024, ssao: true, bloom: true, fxaa: true,
+        // bloom 强度 0.08、阈值 0.95，肉眼几乎不可见，却要走 EffectComposer：多一串全屏
+        // 模糊 pass，且离屏渲染目标没有 MSAA，边缘反而比「平衡」档更锯齿。关掉后直接渲染。
+        shadows: true, shadowMapSize: 1024, ssao: true, bloom: false, fxaa: true,
         colorStrength: 1.0, edgeStrength: 0.11, contourStrength: 0.045,
         wallHighlightStrength: 0.20, screenSpaceEdges: true, screenEdgeStrength: 0.20,
         cutTopStrength: 0.20,
@@ -524,7 +556,7 @@ function _ensurePostProcessing() {
             defaultSsaoOverrideVisibility();
             this.scene.traverse(object => {
                 if (object.isSprite || object.userData?.radarExcludeFromSsao ||
-                    (object.isMesh && object !== mapMesh)) object.visible = false;
+                    (object.isMesh && !object.userData?.radarMapChunk)) object.visible = false;
             });
         };
         ssaoPass.kernelRadius = 8;
@@ -588,6 +620,12 @@ function _applyQualityToSceneObjects(profile) {
         object.castShadow = !!profile.shadows && object.userData.radarShadowCaster !== false;
         object.receiveShadow = !!profile.shadows && object.userData.radarShadowReceiver !== false;
     });
+    // 地图分块：开阴影时建筑既投影也受影；分块后阴影 pass 只画阴影框内的块
+    if (mapMesh) for (const chunk of mapMesh.children) {
+        chunk.castShadow = !!profile.shadows;
+        chunk.receiveShadow = !!profile.shadows;
+    }
+    _requestShadowUpdate();
     if (gridHelper) {
         const materials = Array.isArray(gridHelper.material) ? gridHelper.material : [gridHelper.material];
         for (const material of materials) {
@@ -632,6 +670,30 @@ function _applyMapMaterialQuality(profile) {
         }
         material.needsUpdate = true;
     }
+    _applyMapViewStyle();
+}
+
+/* 写入当前地图风格的配色，并按镜头模式调整结构强调：第一视角下墙面占满画面，
+   战术风格的墙体自发光与等高线会把整面墙刷成同一种亮青色、丢掉光照明暗，
+   因此压低自发光、关掉等高线、略加强掠射角轮廓光。只改 uniform，不触发重编译。 */
+function _applyMapViewStyle() {
+    const profile = activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()];
+    const fpv = cameraMode === CAMERA_MODES.FIRST_PERSON;
+    const style = _mapStyle();
+    for (const material of _getRadarMapMaterials()) {
+        const u = material?.userData?.radarUniforms;
+        if (!u) continue;
+        u.radarGroundLow.value.setHex(style.groundLow);
+        u.radarGroundHigh.value.setHex(style.groundHigh);
+        u.radarWallLow.value.setHex(style.wallLow);
+        u.radarWallHigh.value.setHex(style.wallHigh);
+        u.radarEdgeColor.value.setHex(style.edge);
+        u.radarWallHighlightStrength.value = profile.wallHighlightStrength * style.wallHighlight * (fpv ? 0.3 : 1);
+        u.radarContourStrength.value = fpv ? 0 : profile.contourStrength * style.contour;
+        u.radarEdgeStrength.value = profile.edgeStrength * style.edgeScale * (fpv ? 1.6 : 1);
+        u.radarDetailEnabled.value = u.radarEdgeStrength.value > 0 || u.radarContourStrength.value > 0 ? 1 : 0;
+    }
+    _syncMapTexture();
 }
 
 function _applyRenderQuality() {
@@ -639,6 +701,8 @@ function _applyRenderQuality() {
     const resolvedId = _resolvedRenderQualityId();
     const base = RENDER_QUALITY_PROFILES[resolvedId];
     const profile = { ...base, ssao:false, screenSpaceEdges:false }; // Solid-depth SSAO is inappropriate for transparent walls.
+    profile.shadows = _shadowsWanted(base);
+    profile.shadowMapSize = base.id === 'high' ? 2048 : 1024;
     if (renderer.capabilities.isWebGL2 === false) {
         profile.ssao = false;
         profile.bloom = false;
@@ -653,6 +717,9 @@ function _applyRenderQuality() {
     renderer.toneMappingExposure = profile.exposure;
     renderer.shadowMap.enabled = !!profile.shadows;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    // 阴影图静态缓存：只在阴影框跨格、场景变化或人物移动（约 10 Hz）时重画，见 _updateLightingRig
+    renderer.shadowMap.autoUpdate = false;
+    _requestShadowUpdate();
 
     if (ambient) ambient.intensity = profile.ambient;
     if (hemi) hemi.intensity = profile.hemisphere;
@@ -690,6 +757,7 @@ function _applyRenderQuality() {
     qualityMonitor.sampleStartedAt = 0;
     qualityMonitor.lastFrameAt = 0;
     qualityMonitor.warmupUntil = performance.now() + 6000;
+    _applyStyleLights();
     _dispatchRenderQualityChanged();
     console.log(`[Radar3D] 画质 ${requestedRenderQuality} → ${profile.id}`);
     return _getRenderQualityState();
@@ -805,6 +873,7 @@ function init() {
     buildPools();
 
     _applyRenderQuality();
+    _applyMapStyle();
 
     // 小地图点击放大
     setupMinimapClick();
@@ -868,6 +937,7 @@ function makeHeadingMesh(style, occluded) {
         color: occluded ? 0xff4058 : 0xffffff,
         depthTest: true,
         depthFunc: occluded ? THREE.GreaterDepth : THREE.LessEqualDepth,
+        fog: !occluded,
         depthWrite: !occluded,
         transparent: occluded,
         opacity: occluded ? 0.78 : 1,
@@ -904,7 +974,7 @@ function buildPlayerEntity() {
     group.add(capsule);
 
     const occMat = new THREE.MeshBasicMaterial({
-        color: 0xff2233, depthTest: true, depthFunc: THREE.GreaterDepth,
+        color: 0xff2233, depthTest: true, depthFunc: THREE.GreaterDepth, fog: false,
         depthWrite: false, transparent: true, opacity: 0.6,
     });
     const occCapsule = new THREE.Mesh(capsuleGeo, occMat);
@@ -950,7 +1020,7 @@ function buildBossEntity() {
     mesh.position.z = 0;
     group.add(mesh);
     const occMat = new THREE.MeshBasicMaterial({
-        color: 0xffaa33, depthTest: true, depthFunc: THREE.GreaterDepth,
+        color: 0xffaa33, depthTest: true, depthFunc: THREE.GreaterDepth, fog: false,
         depthWrite: false, transparent: true, opacity: 0.6,
     });
     const occ = new THREE.Mesh(geo, occMat);
@@ -983,7 +1053,7 @@ function buildAIEntity() {
     mesh.position.z = 0;
     group.add(mesh);
     const occMat = new THREE.MeshBasicMaterial({
-        color: 0xa78bfa, depthTest: true, depthFunc: THREE.GreaterDepth,
+        color: 0xa78bfa, depthTest: true, depthFunc: THREE.GreaterDepth, fog: false,
         depthWrite: false, transparent: true, opacity: 0.5,
     });
     const occ = new THREE.Mesh(geo, occMat);
@@ -1203,6 +1273,22 @@ function makeInfoCardSprite() {
     return sp;
 }
 
+/* 染色后的装备图标按 (种类, 颜色) 缓存：信息卡随距离频繁重绘，不能每次新建离屏 canvas。 */
+const _tintedIcons = new Map();
+function _tintedCardIcon(kind, color) {
+    const image = CARD_ICONS[kind];
+    if (!image) return null;
+    const key = kind + color;
+    let off = _tintedIcons.get(key);
+    if (!off) {
+        off = document.createElement('canvas'); off.width = 28; off.height = 28;
+        const ox = off.getContext('2d'); ox.drawImage(image, 0, 0, 28, 28);
+        ox.globalCompositeOperation = 'source-atop'; ox.fillStyle = color; ox.fillRect(0, 0, 28, 28);
+        _tintedIcons.set(key, off);
+    }
+    return off;
+}
+
 function drawInfoCard(ctx, info, detail) {
     const cv = ctx.canvas;
     const W = cv.width, H = cv.height;
@@ -1222,10 +1308,27 @@ function drawInfoCard(ctx, info, detail) {
     let title = [info.name, distance].filter(Boolean).join(' · ');
     ctx.font = '700 28px system-ui, sans-serif';
     while (title.length > 2 && ctx.measureText(title).width > W - 12) title = title.slice(0, -2) + '…';
-    outlined(title, W / 2, 5, dim ? '#aeb7bd' : cssColor, '700 28px system-ui, sans-serif');
+    const details = detail >= 2 ? [info.weapon, info.hpText].filter(Boolean).join('  ·  ') : '';
+    /* 深色底板：只有描边的文字压在同色系地图（青色墙面 vs 青色队伍）上对比不够。
+       透明度跟随 2D 的「信息条底色」设置，与 2D 信息条一致。 */
+    const plate = Number.isFinite(info.plate) ? info.plate : 0.8;
+    if (plate > 0 && (title || details)) {
+        const titleW = ctx.measureText(title).width;
+        ctx.font = '600 19px system-ui, sans-serif';
+        const detailW = details ? ctx.measureText(details).width : 0;
+        const equipW = detail >= 2 ? ((info.helmetLv ? 1 : 0) + (info.armorLv ? 1 : 0)) * 54 : 0;
+        const w = Math.min(W - 4, Math.max(titleW, detailW, equipW) + 24);
+        const h = detail >= 2 && (details || equipW) ? (equipW ? 108 : 70) : 38;
+        ctx.fillStyle = `rgba(6,9,14,${(0.82 * plate).toFixed(3)})`;
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(W / 2 - w / 2, 1, w, h, 9); else ctx.rect(W / 2 - w / 2, 1, w, h);
+        ctx.fill();
+        ctx.fillStyle = dim ? '#aeb7bd' : cssColor;     // 顶边一条身份色，远看也能分清是谁
+        ctx.fillRect(W / 2 - w / 2 + 9, 1, w - 18, 3);
+    }
+    outlined(title, W / 2, 6, dim ? '#aeb7bd' : cssColor, '700 28px system-ui, sans-serif');
 
     if (detail >= 2) {
-        const details = [info.weapon, info.hpText].filter(Boolean).join('  ·  ');
         outlined(details, W / 2, 43, '#e7eef2', '600 19px system-ui, sans-serif');
         const equipment = [];
         if (info.helmetLv) equipment.push(['helmet', Number(info.helmetLv), info.helmetDur]);
@@ -1233,14 +1336,9 @@ function drawInfoCard(ctx, info, detail) {
         const width = equipment.length * 54;
         equipment.forEach(([kind, level, durability], index) => {
             const x = W / 2 - width / 2 + index * 54;
-            const image = CARD_ICONS[kind];
             const color = '#' + (EQUIP_COLORS[level] || EQUIP_COLORS[0]).toString(16).padStart(6, '0');
-            if (image) {
-                const off = document.createElement('canvas'); off.width = 28; off.height = 28;
-                const ox = off.getContext('2d'); ox.drawImage(image, 0, 0, 28, 28);
-                ox.globalCompositeOperation = 'source-atop'; ox.fillStyle = color; ox.fillRect(0, 0, 28, 28);
-                ctx.drawImage(off, x, 75, 28, 28);
-            }
+            const tinted = _tintedCardIcon(kind, color);
+            if (tinted) ctx.drawImage(tinted, x, 75, 28, 28);
             const value = Array.isArray(durability) && durability[0] != null ? Math.round(durability[0]) : '';
             outlined(value === '' ? '' : String(value), x + 33, 79, color, '700 15px monospace', 'left');
         });
@@ -1254,7 +1352,7 @@ function updateInfoCard(sprite, info, detail) {
         detail,
         info.name, info.hpText, Math.round(info.distanceM || 0),
         info.weapon, info.armorLv, info.helmetLv, info.armorDur, info.helmetDur,
-        info.colorHex, info.dim ? 1 : 0,
+        info.colorHex, info.dim ? 1 : 0, info.plate,
     ].join('|');
     if (sprite.userData.key === key) return;
     sprite.userData.key = key;
@@ -1265,19 +1363,36 @@ function updateInfoCard(sprite, info, detail) {
     sprite.visible = (detail > 0);
 }
 
-/* 根据相机距离和实体种类给出信息卡 detail:
-   distM: three-world 米. kind: 'player' | 'boss' | 'ai'.
-   跟随的目标强制拉最高 detail.
-   v700x2: 阈值放宽 (40→150, 120→500) — 游戏里玩家常在几百米, 老阈值让大部分
-           玩家立刻变纯血条, 看不到名字/武器. */
+/* 3D 信息卡（名字/武器/血量/护甲）只在 CARD_RANGE_M 内显示：更远时卡片缩到读不出，
+   第一视角下中距离的多张卡还会互相叠压。远处改由 HUD 用固定字号的单行名牌
+   「名字 距离 + 细血条」承担。被跟随的目标始终显示完整卡片。 */
+const CARD_RANGE_M = 80;
 function _pickDetail(distM, kind, isFollowed) {
     if (isFollowed) return 2;
-    if (kind === 'ai') {
-        /* AI 数量大 (可能 30+), 中距就已经太密. 全程只显示血条. */
-        return 0;
-    }
-    if (distM < 150) return 2;
-    return 1; // Preserve character identification at any distance, matching the 2D roster.
+    if (kind === 'ai') return 0;   // AI 数量大，只给侧边血条与 HUD 标识
+    return distM < CARD_RANGE_M ? 2 : 0;
+}
+
+/* 人物模型配色。
+   team：可见与掩体后都用身份色（掩体后半透明），敌我与队伍一眼可辨，与 2D 一致；
+   vis ：敌人按「可见 / 掩体后」两种自定义色区分，适合盯掩体；我方始终用我方色。 */
+const _look = { visible: 0, occluded: 0, opacity: 0.5 };
+function _modelColors(identity, enemyLike, dead, disp) {
+    if (dead) { _look.visible = _look.occluded = PALETTE.dead; _look.opacity = 0.35; }
+    else if (disp.color3d === 'vis' && enemyLike) {
+        _look.visible = _prefColorHex(disp.visibleColor3d, identity);
+        _look.occluded = _prefColorHex(disp.occludedColor3d, 0xff4058);
+        _look.opacity = 0.72;
+    } else { _look.visible = _look.occluded = identity; _look.opacity = 0.5; }
+    return _look;
+}
+
+/* 标签与 HUD 的距离：相对「观察者」的水平距离，与 2D 干员台口径一致。 */
+function _viewerRange(p, tx, ty, tz) {
+    const v = frameViewer;
+    if (v) return Math.hypot(p.x - v.x, p.y - v.y) * UE_TO_M;
+    const c = camera.position;
+    return Math.hypot(c.x - tx, c.y - ty, c.z - tz);
 }
 
 // ============================================================================
@@ -1289,16 +1404,14 @@ function updatePlayers(players) {
     }
     POOL_SIZE.players = POOL.players.length;
     const disp = window.AppState?.display || {};
-    // Stable identity comes from ER; nearby teammates remain separate characters.
-    const gameData = window.AppState?.gameData;
-    const local = gameData?.local;
+    const scale = Number(disp.charScale) || 1;
     let n = 0;
     if (players && Array.isArray(players)) {
         for (const p of players) {
             if (n >= POOL_SIZE.players) break;
             if (p.key === '__self') continue;
             const e = POOL.players[n++];
-            if (e.root.userData.entityKey !== p.key) e.root.visible = false;
+            if (e.root.userData.entityKey !== p.key) { e.root.visible = false; e.hudAlert = false; }
             e.root.userData.entityKey = p.key;
             e.root.userData.entityName = String(p.name || '');
             /* 目标位置 (立即读) — UE→three 手性转换 */
@@ -1313,24 +1426,20 @@ function updatePlayers(players) {
                 e.root.position.z = tz;
             }
             // Use the same presented pose as XYZ.
-            const targetYaw = ueYawToThreeRotZ(p.yaw);
-            e.root.rotation.z = targetYaw;
+            e.root.rotation.z = ueYawToThreeRotZ(p.yaw);
 
-            // CampId 只负责敌我识别；队友统一绿色，敌人仍按 TeamId 区分小队。
-            const isTeammate = window.isRadarTeammate?.(p, local, gameData) === true;
+            // 身份色：队友统一我方蓝，敌人按 TeamId 取与 2D 相同的队伍色
+            const isTeammate = p.kind === 'mate';
             const teamId = Number(p.team) > 0 ? Number(p.team) : 0;
-            const color = isTeammate ? 0x4ade80 : teamColor(teamId);
-            let visibleColor = _prefColorHex(disp.visibleColor3d, color);
-            const occludedColor = _prefColorHex(disp.occludedColor3d, 0xff4058);
-            // 死亡: 变暗
+            const color = isTeammate ? PALETTE.mate : teamColor(teamId);
             const dead = p.alive === false;
-            if (dead) {
-                visibleColor = 0x475569;
-            }
-            syncCharacterModel(e,disp.model3d,{scale:Number(disp.charScale)||1,visibleColor,occludedColor,
-                showHeading:disp.showCone !== false && Number.isFinite(p.yaw),
-                directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d});
-            // v698g5: 头顶信息卡 (名字 + 血条 + 武器 + 护甲)
+            const look = _modelColors(color, !isTeammate, dead, disp);
+            syncCharacterModel(e,disp.model3d,{scale,visibleColor:look.visible,occludedColor:look.occluded,
+                occludedOpacity:look.opacity,showHeading:disp.showCone !== false && Number.isFinite(p.yaw),
+                directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d,
+                helmetLv:p.helmetLv,armorLv:p.armorLv,bagLv:p.bagLv,gearColors:EQUIP_COLORS});
+            animateCharacterModel(e,p,camera);
+            // 头顶信息卡 (名字 + 武器 + 血量 + 护甲)
             const nameParts = [];
             const lastKnown = (p._out_of_range || p.out_of_range) && !dead && !p.spawn_mark;
             if(lastKnown)nameParts.push('超距·最后位置');
@@ -1340,6 +1449,7 @@ function updatePlayers(players) {
                 name: nameParts.join(' '),
                 colorHex: color,
                 dim: dead || lastKnown,
+                plate: disp.tagOpacity,
             };
             if (disp.showHealth !== false && p.maxHp > 0 && p.hp != null) {
                 info.hpRatio = p.hp / p.maxHp;
@@ -1350,29 +1460,19 @@ function updatePlayers(players) {
                 if (p.armorLv > 0) { info.armorLv = p.armorLv; info.armorDur = p.armorDur; }
                 if (p.helmetLv > 0) { info.helmetLv = p.helmetLv; info.helmetDur = p.helmetDur; }
             }
-            /* 坐标到自身的三维距离同时驱动标签文本、细节和屏幕缩放。 */
-            const camPos = camera.position;
-            const distM = Math.hypot(camPos.x - tx, camPos.y - ty, camPos.z - tz);
-            const rangeM = local && Number.isFinite(local.x) && Number.isFinite(local.y)
-                ? Math.hypot(p.x-local.x,p.y-local.y,(p.z||0)-(local.z||0))*UE_TO_M : distM;
+            const rangeM = _viewerRange(p, tx, ty, tz);
             if (disp.showDistance !== false) info.distanceM = rangeM;
             const isFollowed = followTarget && followTarget.kind === 'player' && followTarget.name === p.name;
             const detail = _pickDetail(rangeM, 'player', isFollowed);
             updateInfoCard(e.sprite, info, detail);
-            /* v700x3: 血条独立 mesh 更新 (跟胶囊一起缩) */
             if (e.hpBar) {
                 if (info.hpRatio != null) updateHpBar(e.hpBar, info.hpRatio);
                 else e.hpBar.group.visible = false;
             }
+            e.src = p; e.identityColor = color; e.modelScale = scale;
         }
     }
     for (let i = n; i < POOL_SIZE.players; ++i) POOL.players[i].root.visible = false;
-    /* 调试用: 前 3 个玩家的世界坐标打印到 console, 帮排查"看不到" */
-    if (players && players.length > 0 && (window._dbgPlayerLog ?? true)) {
-        window._dbgPlayerLog = false;
-        const sample = players.slice(0, 3).map(p => `${p.name || '?'}(${(p.x*UE_TO_M).toFixed(0)},${(p.y*UE_TO_M).toFixed(0)},${((p.z||0)*UE_TO_M).toFixed(0)})`).join(' ');
-        console.log(`[Radar3D] 玩家 ${players.length} 位置样本(米): ${sample}`);
-    }
 }
 
 function updateBosses(bosses) {
@@ -1443,6 +1543,8 @@ function updateAIs(ais) {
                 e.root.position.z = tz;
             }
             // v700x3: AI 只显示侧边血条, 不显示 info sprite
+            e.mesh.material.color.setHex(PALETTE.ai);
+            e.src = a; e.identityColor = PALETTE.ai; e.modelScale = 1;
             let hpRatio = null;
             if (disp.showHealth !== false && a.maxHp > 0 && a.hp != null) {
                 hpRatio = a.hp / a.maxHp;
@@ -1456,6 +1558,8 @@ function updateAIs(ais) {
     for (let i = n; i < POOL_SIZE.ais; ++i) POOL.ais[i].root.visible = false;
 }
 
+/* 物资标签是世界固定尺寸（远小近大），离镜头太近时会占满画面，直接不画。 */
+const ITEM_HIDE_NEAR_CAMERA_M = 3;
 function updateItems(items) {
     while (POOL.items.length < (items?.length || 0)) {
         const entity = buildItemEntity(); entity.root.visible = false; scene.add(entity.root); POOL.items.push(entity);
@@ -1465,6 +1569,7 @@ function updateItems(items) {
     const minQ = disp.minQuality || 0;
     /* v700x3: 最低价过滤 (元). UI 里 minPrice 单位 w, 存 * 10000 后的元数 */
     const minPrice = disp.minPrice || 0;
+    const camPos = camera.position;
     let n = 0;
     if (items && Array.isArray(items)) {
         for (const it of items) {
@@ -1476,10 +1581,12 @@ function updateItems(items) {
             /* 已销毁/无效物品 (name 为空或 ???): 服务端偶尔漏过滤这类, 前端兜底 */
             const nm = (it.displayName || it.name || '').trim();
             if (!nm || nm === '???') continue;
+            const ix = ueToThreeX(it.x), iy = ueToThreeY(it.y), iz = ueToThreeZ(it.z);
+            if (Math.hypot(ix - camPos.x, iy - camPos.y, iz - camPos.z) < ITEM_HIDE_NEAR_CAMERA_M) continue;
             const e = POOL.items[n++];
             e.root.visible = true;
             e.root.userData.entityKey = it.key;
-            e.root.position.set(ueToThreeX(it.x), ueToThreeY(it.y), ueToThreeZ(it.z));
+            e.root.position.set(ix, iy, iz);
             e.mesh.material.color.setHex(qualityColor(q));
             if (e.sprite) _drawItemLabel(e.sprite, nm, q);
         }
@@ -1509,12 +1616,14 @@ function updateSelf(local) {
 
     /* 头顶信息卡: 只显示 "我" + hero */
     const disp = window.AppState?.display || {};
-    const visibleColor = _prefColorHex(disp.visibleColor3d, 0x4ade80);
-    const occludedColor = _prefColorHex(disp.occludedColor3d, 0xff4058);
-    syncCharacterModel(selfEntity,disp.model3d,{scale:Number(disp.charScale)||1,visibleColor,occludedColor,
-        showHeading:disp.showCone !== false && Number.isFinite(local.yaw),
-        directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d});
-    const info = { name: disp.showName === false ? '' : '自己' + (local.hero ? ' ' + local.hero : ''), colorHex: 0x4ade80, distanceM:0 };
+    const scale = Number(disp.charScale) || 1;
+    const look = _modelColors(PALETTE.self, false, !!local.dead, disp);
+    syncCharacterModel(selfEntity,disp.model3d,{scale,visibleColor:look.visible,occludedColor:look.occluded,
+        occludedOpacity:look.opacity,showHeading:disp.showCone !== false && Number.isFinite(local.yaw),
+        directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d,gearColors:EQUIP_COLORS});
+    animateCharacterModel(selfEntity,local,camera);
+    selfEntity.src = local; selfEntity.identityColor = PALETTE.self; selfEntity.modelScale = scale;
+    const info = { name: disp.showName === false ? '' : '自己' + (local.hero ? ' ' + local.hero : ''), colorHex: PALETTE.self, plate: disp.tagOpacity };
     updateInfoCard(selfEntity.sprite,
         info,
         _pickDetail(camera.position.distanceTo(selfEntity.root.position), 'player',
@@ -1573,8 +1682,8 @@ function fitToAll() {
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
     // 地图 bbox
-    if (mapMesh && mapMesh.geometry.boundingBox) {
-        const bb = mapMesh.geometry.boundingBox;
+    if (mapBounds && !mapBounds.isEmpty()) {
+        const bb = mapBounds;
         minX = Math.min(minX, bb.min.x); maxX = Math.max(maxX, bb.max.x);
         minY = Math.min(minY, bb.min.y); maxY = Math.max(maxY, bb.max.y);
         minZ = Math.min(minZ, bb.min.z); maxZ = Math.max(maxZ, bb.max.z);
@@ -1661,7 +1770,10 @@ function _applyIndoorClarityRenderingState() {
         const desiredMaterial = indoorClarityActive && variants.cutaway
             ? variants.cutaway
             : variants.plain;
-        if (mapMesh.material !== desiredMaterial) mapMesh.material = desiredMaterial;
+        if (mapMesh.userData.activeMaterial !== desiredMaterial) {
+            mapMesh.userData.activeMaterial = desiredMaterial;
+            for (const chunk of mapMesh.children) chunk.material = desiredMaterial;
+        }
     }
     if (ssaoPass) {
         const desiredNormalMaterial = indoorClarityActive && ssaoCutawayNormalMaterial
@@ -1872,10 +1984,140 @@ function _makeFollowState() {
     };
 }
 
+/* ---------------------------------------------------------------- 地图风格
+   real    ：写实白模（默认）。地形 GLB 只有几何、没有贴图和材质，最接近游戏原貌的
+             做法是日光下的中性白模：天空渐变 + 与地平线同色的大气雾 + 太阳/天光，
+             地表偏土绿、岩石与混凝土偏暖灰。人物队伍色在中性灰环境里最醒目。
+   tactical：原先的深色青调「雷达」风格，墙体自发光与等高线强调结构轮廓。
+   各项颜色都是 sRGB 十六进制；fogDist 按镜头模式给 [near, far]（米）。 */
+const MAP_STYLES = {
+    real: {
+        // 地表偏暗的土绿，建筑立面与屋顶偏亮的混凝土灰：结构从地形里「立」出来
+        groundLow: 0x59604c, groundHigh: 0x958f80, wallLow: 0x8d8a83, wallHigh: 0xbdb9b0, edge: 0x2b2f33,
+        wallHighlight: 0, contour: 0, edgeScale: 0,
+        sky: { zenith: 0x4c7db8, horizon: 0xc6d3dd, nadir: 0x8a877c },
+        fog: 0xc2cfd9, clear: 0xc2cfd9,
+        // 中性日光为主、天光补光压低，向光面与背光面拉开明暗，避免整体发灰发黄
+        light: { ambient: 0.05, hemiSky: 0xd6e4f2, hemiGround: 0x5f5a50, hemi: 0.55,
+                 sun: 0xfff7ec, key: 3.2, fill: 0.18, fillColor: 0xbfd6ff, exposure: 0.95 },
+        fogDist: { firstPerson: [140, 1500], thirdPerson: [260, 2400], free: [2500, 14000] },
+        // 官方底图投影：原色直贴地面/屋顶；墙只取少量色调。ao = bake AO 的混合强度
+        mapTex: { strength: 1, tint: 0, wall: 0.22 }, ao: 0.85,
+    },
+    tactical: {
+        groundLow: 0x0b2630, groundHigh: 0x3a6c72, wallLow: 0x07101d, wallHigh: 0x1d4055, edge: 0x2ac2d0,
+        wallHighlight: 1, contour: 1, edgeScale: 1,
+        sky: null, fog: 0x0b0f18, clear: 0x0b0f18, light: null,
+        fogDist: { firstPerson: [90, 950], thirdPerson: [220, 1800], free: [8000, 30000] },
+        // 战术风格也投影，但只取亮度映射到青色地面色阶：道路、地貌可辨，配色不被照片破坏
+        mapTex: { strength: 0.85, tint: 1, wall: 0.10 }, ao: 0.6,
+    },
+};
+let mapStyleId = 'real';
+let skyDome = null;
+
+function _mapStyle() { return MAP_STYLES[mapStyleId] || MAP_STYLES.real; }
+
+// 天空穹顶：跟随相机的单位球，按视线方向的世界 z 分量插值天顶 / 地平线 / 地面色。
+// 不写深度、最先绘制，永远在场景之后；不受雾影响。
+function _ensureSkyDome() {
+    if (skyDome || !scene) return skyDome;
+    const material = new THREE.ShaderMaterial({
+        uniforms: {
+            skyZenith: { value: new THREE.Color() },
+            skyHorizon: { value: new THREE.Color() },
+            skyNadir: { value: new THREE.Color() },
+        },
+        vertexShader: `varying vec3 vSkyDir;
+void main() {
+    vSkyDir = normalize( position );
+    gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+}`,
+        fragmentShader: `uniform vec3 skyZenith;
+uniform vec3 skyHorizon;
+uniform vec3 skyNadir;
+varying vec3 vSkyDir;
+void main() {
+    float h = normalize( vSkyDir ).z;
+    vec3 c = h >= 0.0
+        ? mix( skyHorizon, skyZenith, pow( clamp( h, 0.0, 1.0 ), 0.6 ) )
+        : mix( skyHorizon, skyNadir, smoothstep( 0.0, 0.18, -h ) );
+    gl_FragColor = vec4( c, 1.0 );
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+}`,
+        side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
+    });
+    skyDome = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 16), material);
+    skyDome.frustumCulled = false;
+    skyDome.renderOrder = -1000;
+    skyDome.raycast = () => {};
+    skyDome.userData.radarExcludeFromSsao = true;
+    scene.add(skyDome);
+    return skyDome;
+}
+
+function _applyStyleLights() {
+    const profile = activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()];
+    const L = _mapStyle().light;
+    if (ambient) ambient.intensity = L ? L.ambient : profile.ambient;
+    if (hemi) {
+        hemi.intensity = L ? L.hemi : profile.hemisphere;
+        hemi.color.setHex(L ? L.hemiSky : 0x88aaff);
+        hemi.groundColor.setHex(L ? L.hemiGround : 0x332211);
+    }
+    if (dirLight) { dirLight.intensity = L ? L.key : profile.keyLight; dirLight.color.setHex(L ? L.sun : 0xffffff); }
+    if (fillLight) { fillLight.intensity = L ? L.fill : profile.fillLight; fillLight.color.setHex(L ? L.fillColor : 0x9fc8ff); }
+    if (renderer) renderer.toneMappingExposure = L ? L.exposure : profile.exposure;
+    // 开阴影后室内整片处于阴影里，只剩天光；适当抬高天光与补光，复盘时室内仍看得清
+    if (profile.shadows) {
+        if (hemi) hemi.intensity *= 1.4;
+        if (fillLight) fillLight.intensity *= 2.0;
+    }
+}
+
+function _applyMapStyle() {
+    if (!scene || !renderer) return;
+    const style = _mapStyle();
+    scene.fog?.color.setHex(style.fog);
+    renderer.setClearColor(style.clear, 1.0);
+    if (style.sky) {
+        const dome = _ensureSkyDome();
+        dome.visible = true;
+        dome.material.uniforms.skyZenith.value.setHex(style.sky.zenith);
+        dome.material.uniforms.skyHorizon.value.setHex(style.sky.horizon);
+        dome.material.uniforms.skyNadir.value.setHex(style.sky.nadir);
+    } else if (skyDome) skyDome.visible = false;
+    _applyStyleLights();
+    _applyViewModeRendering();
+}
+
+/* 按镜头模式调整雾与裁剪面。跟随视角贴地看远处：距离雾提供纵深并压住远景噪声，
+   同时收紧远裁剪面——地图对角线级的 far（上万米）配 0.2m near，远处深度精度
+   不够，第一视角下大片墙面会 z-fighting 闪烁。俯视/自由模式保持全图可见。 */
+let mapFarPlane = 50000;
+const VIEW_CAMERA_FAR = { firstPerson: 2600, thirdPerson: 4500 };
+function _applyViewModeRendering() {
+    if (!scene || !camera) return;
+    const [fogNear, fogFar] = _mapStyle().fogDist[cameraMode] || _mapStyle().fogDist.free;
+    if (scene.fog && (scene.fog.near !== fogNear || scene.fog.far !== fogFar)) {
+        scene.fog.near = fogNear; scene.fog.far = fogFar;
+    }
+    const near = cameraMode === CAMERA_MODES.FIRST_PERSON ? 0.1 : 0.2;
+    const far = VIEW_CAMERA_FAR[cameraMode] ? Math.min(mapFarPlane, VIEW_CAMERA_FAR[cameraMode]) : mapFarPlane;
+    if (camera.near !== near || camera.far !== far) {
+        camera.near = near; camera.far = far;
+        camera.updateProjectionMatrix();
+    }
+    applyGatewaySurfaceOpacity();
+    _applyMapViewStyle();
+}
+
 function _commitViewState(mode, target) {
     cameraMode = VALID_CAMERA_MODES.has(mode) ? mode : CAMERA_MODES.THIRD_PERSON;
     followTarget = cameraMode === CAMERA_MODES.FREE ? null : (target || null);
     followState = followTarget ? _makeFollowState() : null;
+    _applyViewModeRendering();
     _applyCameraModeControls();
     _syncFollowButton();
     _updateIndoorClarityUniforms();
@@ -1961,9 +2203,17 @@ function _resetThirdPersonCamera(hit) {
     controls.update();
 }
 
+/* 「第一视角高度」设置是离脚底的眼高（默认 1.6m）；UE 给的是胶囊中心（脚底上方约 0.9m）。
+   以前把设置值直接加在中心上，眼睛实际在 2.5m，高出被跟随者头顶一截。 */
+const CAPSULE_CENTER_ABOVE_FOOT_M = 0.9;
+function _firstPersonEyeOffset() {
+    const h = Number(window.AppState?.display?.eyeHeight);
+    return Number.isFinite(h) && h > 0 ? h - CAPSULE_CENTER_ABOVE_FOOT_M : FIRST_PERSON_CAMERA.EYE_HEIGHT;
+}
+
 function _resetFirstPersonCamera(hit) {
     const eye = _worldPositionForTarget(hit);
-    eye.z += (Number(window.AppState?.display?.eyeHeight)||FIRST_PERSON_CAMERA.EYE_HEIGHT);
+    eye.z += _firstPersonEyeOffset();
     const direction = new THREE.Vector3(...aimDirection(Number(hit.yaw)||0,Number(hit.pitch)||0));
     camera.position.copy(eye);
     controls.target.copy(eye).addScaledVector(direction, FIRST_PERSON_CAMERA.LOOK_DISTANCE);
@@ -2063,7 +2313,7 @@ function updateFollow(controlsAlreadyUpdated = false) {
         }
         if(Number.isFinite(hit.yaw)) direction.set(...aimDirection(hit.yaw,Number(hit.pitch)||0));
         const desiredEye = _worldPositionForTarget(hit);
-        desiredEye.z += (Number(window.AppState?.display?.eyeHeight)||FIRST_PERSON_CAMERA.EYE_HEIGHT);
+        desiredEye.z += _firstPersonEyeOffset();
         if (!followState.eye) followState.eye = desiredEye.clone();
         else {
             const now = performance.now(), dt = Math.min(100, Math.max(0, now - (followState.eyeUpdatedAt ?? now - 16.67)));
@@ -2199,7 +2449,19 @@ function _sampleMapHeightRange(positions) {
     return { low, high: Math.max(low + 8, high) };
 }
 
-function _createRadarMapMaterial(zLow, zHigh, cutaway = false) {
+/* 底图纹理未就绪时绑定的 1×1 透明占位，避免着色器采样未绑定的 sampler。 */
+let _blankMapTexture = null;
+function _radarBlankMapTexture() {
+    if (!_blankMapTexture) {
+        _blankMapTexture = new THREE.DataTexture(new Uint8Array([0, 0, 0, 0]), 1, 1);
+        _blankMapTexture.needsUpdate = true;
+    }
+    return _blankMapTexture;
+}
+
+/* hasBake：几何带 bake 属性（Uint8 归一化，R = 半球 AO，G = 头顶天空可见度）。
+   用 define 区分变体：无该属性时绝不能读 attribute（WebGL 默认值 0，整图会变黑）。 */
+function _createRadarMapMaterial(zLow, zHigh, cutaway = false, hasBake = false) {
     const profile = activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()];
     const range = Math.max(8, zHigh - zLow);
     const adaptiveContour = THREE.MathUtils.clamp(
@@ -2227,6 +2489,13 @@ function _createRadarMapMaterial(zLow, zHigh, cutaway = false) {
         radarWallLow: { value: new THREE.Color(0x07101d) },
         radarWallHigh: { value: new THREE.Color(0x1d4055) },
         radarEdgeColor: { value: new THREE.Color(0x2ac2d0) },
+        // 官方底图投影：世界 XY → UV 的仿射矩阵（含 rotate），强度 0 时片元里整段跳过
+        radarMapTex: { value: _radarBlankMapTexture() },
+        radarMapUvMatrix: { value: new THREE.Matrix3() },
+        radarMapStrength: { value: 0 },
+        radarMapTint: { value: 0 },
+        radarMapWallTint: { value: 0.22 },
+        radarAoStrength: { value: 0.85 },
     };
     const material = new THREE.MeshStandardMaterial({
         color: 0xffffff,
@@ -2236,20 +2505,34 @@ function _createRadarMapMaterial(zLow, zHigh, cutaway = false) {
         side: THREE.DoubleSide,
         flatShading: true,
     });
+    if (hasBake) material.defines = { ...(material.defines || {}), RADAR_BAKE: '' };
     material.userData.radarUniforms = uniforms;
     material.userData.radarAdaptiveContour = adaptiveContour;
     material.userData.radarCutawayVariant = cutaway;
+    material.userData.radarHasBake = hasBake;
     material.onBeforeCompile = shader => {
         if (cutaway) _injectRadarCutawayShader(shader);
         Object.assign(shader.uniforms, uniforms);
         shader.vertexShader = shader.vertexShader
             .replace(
                 '#include <common>',
-                '#include <common>\nvarying float vRadarHeight;',
+                `#include <common>
+varying float vRadarHeight;
+varying vec2 vRadarMapUv;
+uniform mat3 radarMapUvMatrix;
+#ifdef RADAR_BAKE
+attribute vec2 bake;
+varying vec2 vRadarBake;
+#endif`,
             )
             .replace(
                 '#include <begin_vertex>',
-                '#include <begin_vertex>\nvRadarHeight = position.z;',
+                `#include <begin_vertex>
+vRadarHeight = position.z;
+vRadarMapUv = ( radarMapUvMatrix * vec3( ( modelMatrix * vec4( transformed, 1.0 ) ).xy, 1.0 ) ).xy;
+#ifdef RADAR_BAKE
+vRadarBake = bake;
+#endif`,
             );
         shader.fragmentShader = shader.fragmentShader
             .replace(
@@ -2274,7 +2557,16 @@ uniform vec3 radarGroundLow;
 uniform vec3 radarGroundHigh;
 uniform vec3 radarWallLow;
 uniform vec3 radarWallHigh;
-uniform vec3 radarEdgeColor;`,
+uniform vec3 radarEdgeColor;
+varying vec2 vRadarMapUv;
+uniform sampler2D radarMapTex;
+uniform float radarMapStrength;
+uniform float radarMapTint;
+uniform float radarMapWallTint;
+uniform float radarAoStrength;
+#ifdef RADAR_BAKE
+varying vec2 vRadarBake;
+#endif`,
             )
             .replace(
                 '#include <normal_fragment_maps>',
@@ -2286,11 +2578,30 @@ float radarHorizontal = smoothstep( 0.34, 0.82, radarUpness );
 float radarWallness = 1.0 - smoothstep( 0.22, 0.74, radarUpness );
 vec3 radarGroundColor = mix( radarGroundLow, radarGroundHigh, radarHeight01 );
 vec3 radarWallColor = mix( radarWallLow, radarWallHigh, radarHeight01 );
+float radarSkyOpen = 1.0;
+#ifdef RADAR_BAKE
+radarSkyOpen = vRadarBake.y;   // 室内地板头顶不是天空：不印屋顶图案
+#endif
+if ( radarMapStrength > 0.0 ) {
+    // 在 uniform 分支内无条件采样（保证 mip 导数），出界与未下载的瓦片靠 alpha 归零
+    vec4 radarTile = texture2D( radarMapTex, vRadarMapUv );
+    vec2 radarTileIn = step( vec2( 0.0 ), vRadarMapUv ) * step( vRadarMapUv, vec2( 1.0 ) );
+    float radarMapK = radarMapStrength * radarTile.a * radarTileIn.x * radarTileIn.y * radarSkyOpen;
+    // radarMapTint=1（战术风格）：只取底图亮度映射到本风格地面色阶，保留道路与地貌而不破坏配色
+    float radarTileLuma = dot( radarTile.rgb, vec3( 0.2126, 0.7152, 0.0722 ) );
+    vec3 radarTileStyled = mix( radarGroundLow, radarGroundHigh, clamp( radarTileLuma * 1.6, 0.0, 1.0 ) ) * 1.25;
+    vec3 radarTileColor = mix( radarTile.rgb * 1.12, radarTileStyled, radarMapTint );
+    radarGroundColor = mix( radarGroundColor, radarTileColor, radarMapK );
+    radarWallColor = mix( radarWallColor, radarWallColor * ( 0.7 + 0.6 * radarTile.rgb ), radarMapK * radarMapWallTint );
+}
 vec3 radarSurfaceColor = mix( radarWallColor, radarGroundColor, radarHorizontal );
 float radarOrientation = dot( radarNormal, radarLightView ) * 0.5 + 0.5;
 radarSurfaceColor *= mix( 0.74, 1.02, radarOrientation );
 float radarRoofAccent = smoothstep( 0.55, 1.0, radarHeight01 ) * smoothstep( 0.82, 0.97, radarUpness );
 radarSurfaceColor += vec3( 0.006, 0.022, 0.026 ) * radarRoofAccent;
+#ifdef RADAR_BAKE
+radarSurfaceColor *= mix( 1.0, vRadarBake.x, radarAoStrength );
+#endif
 diffuseColor.rgb = mix( diffuseColor.rgb, radarSurfaceColor, radarColorStrength );
 roughnessFactor = mix( radarWallRoughness, radarGroundRoughness, radarHorizontal );
 metalnessFactor = radarMetalness;
@@ -2315,7 +2626,7 @@ if ( radarDetailEnabled > 0.5 ) {
             );
         material.userData.radarShader = shader;
     };
-    material.customProgramCacheKey = () => `relink-radar-map-style-v4-${cutaway ? 'cutaway' : 'plain'}`;
+    material.customProgramCacheKey = () => `relink-radar-map-style-v5-${cutaway ? 'cutaway' : 'plain'}-${hasBake ? 'bake' : 'nobake'}`;
     return material;
 }
 
@@ -2345,61 +2656,10 @@ function _buildMapFromBuffer(name, buf) {
         scaled[dst + 8] =  floats[src + 5] * UE_TO_M;
     }
 
-    if (mapMesh) {
-        scene.remove(mapMesh);
-        mapMesh.geometry.dispose();
-        _disposeRadarMapMaterials(mapMesh);
-        mapMesh = null;
-    }
-    if (mapMeshWire) { scene.remove(mapMeshWire); mapMeshWire.geometry.dispose(); mapMeshWire.material.dispose(); mapMeshWire = null; }
-
+    // 旧版三角形流与 GLB 走同一条装图路径（分块、材质、阴影、底图投影）
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(scaled, 3));
-    geo.computeVertexNormals();
-    geo.computeBoundingBox();
-    const heightRange = _sampleMapHeightRange(scaled);
-    const plainMaterial = _createRadarMapMaterial(heightRange.low, heightRange.high, false);
-    const wallMaterial = _createRadarMapMaterial(heightRange.low, heightRange.high, false);
-    wallMaterial.transparent = true; wallMaterial.opacity = 1 - gatewaySurfacePrefs.walltrans / 100; wallMaterial.depthWrite = false;
-    wallMaterial.forceSinglePass = true;
-    const partition = splitSurfaceIndices(geo.attributes.position.array,geo.index?.array);
-    geo.setIndex(new THREE.BufferAttribute(partition.indices,1));
-    geo.clearGroups();geo.addGroup(0,partition.horizontal,0);geo.addGroup(partition.horizontal,partition.vertical,1);
-    const materials = [plainMaterial,wallMaterial];
-    mapMesh = new THREE.Mesh(geo,materials);
-    mapMesh.userData.radarMaterials = {plain:materials};
-    mapMesh.userData.gatewayTransparentWalls = true;
-    applyGatewaySurfaceOpacity();
-    mapMesh.userData.surfaceCounts = {floor:partition.horizontal/3,wall:partition.vertical/3};
-    mapMesh.userData.radarLitSurface = true;
-    mapMesh.userData.radarShadowCaster = false;
-    mapMesh.userData.radarShadowReceiver = true;
-    scene.add(mapMesh);
-    const bb = geo.boundingBox;
-    const rx = bb.max.x - bb.min.x, ry = bb.max.y - bb.min.y, rz = bb.max.z - bb.min.z;
-    const diagonal = Math.hypot(rx, ry, rz);
-    camera.far = THREE.MathUtils.clamp(diagonal * 1.6 + 1000, 6000, 60000);
-    camera.updateProjectionMatrix();
-    if (requestedRenderQuality === 'auto') {
-        const nextCeiling = nTri > 700000 ? 'balanced' : null;
-        if (autoQualityCeiling !== nextCeiling) {
-            autoQualityCeiling = nextCeiling;
-            _applyRenderQuality();
-            if (nextCeiling) {
-                window.showRadarToast?.('当前地图几何较复杂，自动使用平衡画质；可手动选择高画质');
-            }
-        }
-    }
-    _applyQualityToSceneObjects(activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()]);
-    _applyMapMaterialQuality(activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()]);
-    _updateIndoorClarityUniforms();
-    _syncSsaoCameraParameters();
-    qualityMonitor.frames = 0;
-    qualityMonitor.sampleStartedAt = 0;
-    qualityMonitor.lastFrameAt = 0;
-    qualityMonitor.warmupUntil = performance.now() + 8000;
-    // 地图异步完成只更新场景，不改任何镜头模式或用户当前视角。
-    console.log(`[Radar3D] 地图 ${name} 已加入场景，高度色域 ${heightRange.low.toFixed(1)}~${heightRange.high.toFixed(1)}m`);
+    gatewayInstallGeometry(name, geo);
 }
 
 /* 新版 loadMap: 走 IndexedDB 缓存 + 服务端 fileTag 校验 + loading overlay.
@@ -2843,37 +3103,140 @@ function _updateMapShaderViewUniforms() {
     }
 }
 
+/* ---------------------------------------------------------------- 静态缓存阴影
+   renderer.shadowMap.autoUpdate = false，阴影图只在以下时机重画：
+     1) 阴影框中心离开当前位置超过框宽的 1/4，或框尺寸换档（按 1.25 倍分档）；
+     2) 场景、材质、画质或墙体透明度变化（_requestShadowUpdate）；
+     3) 框内有投影的人物移动，按 SHADOW_DYNAMIC_MS 节流。
+   阴影相机中心在光源空间按 texel 对齐：光向固定，静态几何每次重画都落在同一批 texel 上，
+   跨格重画时阴影边缘不会游动闪烁。分块后阴影 pass 只画阴影框内的块。 */
+const SHADOW_DYNAMIC_MS = 100;
+const SHADOW_LIGHT_DIR = new THREE.Vector3(1.05, -1.25, 1.90).normalize();
+const SHADOW_LIGHT_DISTANCE = 700;
+const _shadowCenter = new THREE.Vector3(), _shadowAhead = new THREE.Vector3(), _shadowSnap = new THREE.Vector3();
+
+/* auto：高清档开；桌面平衡档也开（静态缓存 + 分块剔除后增量很小）；移动端平衡与流畅档关。 */
+function _shadowsWanted(base) {
+    if (shadowPref === 'on') return true;
+    if (shadowPref === 'off') return false;
+    return base.id === 'high' || (base.id === 'balanced' && !_isMobileGpuProfile());
+}
+
+function _requestShadowUpdate() {
+    if (renderer?.shadowMap) renderer.shadowMap.needsUpdate = true;
+}
+
+function _placeShadowCamera(center, span) {
+    const shadowCamera = dirLight.shadow.camera;
+    if (!shadowRig.basisReady) {
+        // 与 DirectionalLightShadow.updateMatrices 相同的朝向：相机在光源处看向目标，up 取相机默认
+        const basis = new THREE.Matrix4().lookAt(SHADOW_LIGHT_DIR, new THREE.Vector3(), shadowCamera.up);
+        shadowRig.right.setFromMatrixColumn(basis, 0);
+        shadowRig.up.setFromMatrixColumn(basis, 1);
+        shadowRig.basisReady = true;
+    }
+    const texel = 2 * span / Math.max(1, dirLight.shadow.mapSize.x);
+    const r = center.dot(shadowRig.right), u = center.dot(shadowRig.up);
+    _shadowSnap.copy(center)
+        .addScaledVector(shadowRig.right, Math.round(r / texel) * texel - r)
+        .addScaledVector(shadowRig.up, Math.round(u / texel) * texel - u);
+    dirLight.target.position.copy(_shadowSnap);
+    dirLight.position.copy(_shadowSnap).addScaledVector(SHADOW_LIGHT_DIR, SHADOW_LIGHT_DISTANCE);
+    dirLight.target.updateMatrixWorld();
+    dirLight.updateMatrixWorld();
+    shadowCamera.left = -span; shadowCamera.right = span;
+    shadowCamera.top = span; shadowCamera.bottom = -span;
+    shadowCamera.near = 1; shadowCamera.far = SHADOW_LIGHT_DISTANCE * 2 + 400;
+    shadowCamera.updateProjectionMatrix();
+    shadowRig.center.copy(center);
+    shadowRig.span = span;
+    shadowRig.valid = true;
+    _requestShadowUpdate();
+}
+
+/* 框内可见人物的位姿签名（5cm / 0.05rad 量化）；顺带给新建的人物模型补上 castShadow
+   （人物模型可能在画质应用之后才创建）。 */
+function _shadowCasterSignature() {
+    let sig = 0, n = 0;
+    const c = shadowRig.center, lim = shadowRig.span + 4;
+    const visit = root => {
+        if (!root?.visible) return;
+        const p = root.position;
+        if (Math.abs(p.x - c.x) > lim || Math.abs(p.y - c.y) > lim) return;
+        n++;
+        sig = (sig * 31 + Math.round(p.x * 20) * 3 + Math.round(p.y * 20) * 7
+            + Math.round(p.z * 20) * 11 + Math.round(root.rotation.z * 20) * 13) % 1e15;
+        root.traverse(o => { if (o.isMesh && o.userData.radarLitSurface && !o.castShadow) o.castShadow = true; });
+    };
+    if (selfEntity) visit(selfEntity.root);
+    for (const e of POOL.players) visit(e.root);
+    for (const e of POOL.bosses) visit(e.root);
+    for (const e of POOL.ais) visit(e.root);
+    return sig * 256 + n;
+}
+
+/* 诊断：按三维引擎同样的包围球-视锥测试，统计地图块在主相机 / 阴影相机里的可见量
+   （与帧率无关，可在软件渲染下得到确定的数字）。draw call 按非空材质组估算。 */
+const _cullFrustum = new THREE.Frustum(), _cullMatrix = new THREE.Matrix4();
+function _mapCullStats(cam) {
+    if (!mapMesh || !cam) return null;
+    cam.updateMatrixWorld();
+    _cullFrustum.setFromProjectionMatrix(_cullMatrix.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    const [floorMat, wallMat] = _getRadarMapMaterials();
+    let chunks = 0, triangles = 0, calls = 0;
+    for (const chunk of mapMesh.children) {
+        if (!_cullFrustum.intersectsObject(chunk)) continue;
+        chunks++;
+        for (const g of chunk.geometry.groups) {
+            const mat = g.materialIndex === 0 ? floorMat : wallMat;
+            if (!g.count || !mat?.visible) continue;
+            calls++; triangles += g.count / 3;
+        }
+    }
+    return { chunks, totalChunks: mapMesh.children.length, calls, triangles };
+}
+
 function _updateLightingRig() {
     if (!dirLight || !controls || !camera) return;
     const anchor = controls.target;
     const orbitDistance = camera.position.distanceTo(anchor);
-    const shadowSpan = THREE.MathUtils.clamp(orbitDistance * 1.8, 80, 220);
-    dirLight.target.position.copy(anchor);
-    dirLight.position.set(
-        anchor.x + shadowSpan * 1.05,
-        anchor.y - shadowSpan * 1.25,
-        anchor.z + shadowSpan * 1.90,
-    );
+    const fillSpan = THREE.MathUtils.clamp(orbitDistance * 1.8, 80, 220);
     if (fillLight) {
         fillLight.target.position.copy(anchor);
         fillLight.position.set(
-            anchor.x - shadowSpan * 0.8,
-            anchor.y + shadowSpan * 0.65,
-            anchor.z + shadowSpan * 0.9,
+            anchor.x - fillSpan * 0.8,
+            anchor.y + fillSpan * 0.65,
+            anchor.z + fillSpan * 0.9,
         );
     }
-    if (activeQualityProfile?.shadows) {
-        const shadowCamera = dirLight.shadow.camera;
-        if (Math.abs((dirLight.userData.shadowSpan || 0) - shadowSpan) > 4) {
-            dirLight.userData.shadowSpan = shadowSpan;
-            shadowCamera.left = -shadowSpan;
-            shadowCamera.right = shadowSpan;
-            shadowCamera.top = shadowSpan;
-            shadowCamera.bottom = -shadowSpan;
-            shadowCamera.near = 5;
-            shadowCamera.far = shadowSpan * 5;
-            shadowCamera.updateProjectionMatrix();
-        }
+    if (!activeQualityProfile?.shadows || !renderer?.shadowMap.enabled) {
+        // 无阴影时方向光只决定光向，跟随锚点即可
+        dirLight.target.position.copy(anchor);
+        dirLight.position.copy(anchor).addScaledVector(SHADOW_LIGHT_DIR, SHADOW_LIGHT_DISTANCE);
+        shadowRig.valid = false;
+        return;
+    }
+    // 阴影框半宽：第一视角固定、偏向视线前方；第三跟随随镜头距离；总览放大但设上限
+    const raw = cameraMode === CAMERA_MODES.FIRST_PERSON ? 110
+        : cameraMode === CAMERA_MODES.THIRD_PERSON ? THREE.MathUtils.clamp(orbitDistance * 1.8, 80, 220)
+            : THREE.MathUtils.clamp(orbitDistance * 1.2, 120, 420);
+    const span = Math.pow(1.25, Math.round(Math.log(raw) / Math.log(1.25)));
+    _shadowCenter.copy(anchor);
+    if (cameraMode === CAMERA_MODES.FIRST_PERSON) {
+        camera.getWorldDirection(_shadowAhead);
+        _shadowAhead.z = 0;
+        if (_shadowAhead.lengthSq() > 1e-6) _shadowCenter.copy(camera.position).addScaledVector(_shadowAhead.normalize(), span * 0.55);
+    }
+    const cell = span * 0.25, c = shadowRig.center;
+    if (!shadowRig.valid || span !== shadowRig.span || Math.abs(_shadowCenter.x - c.x) > cell
+        || Math.abs(_shadowCenter.y - c.y) > cell || Math.abs(_shadowCenter.z - c.z) > cell) {
+        _placeShadowCamera(_shadowCenter, span);
+    }
+    const now = performance.now();
+    if (now - (shadowRig.sigAt || 0) >= SHADOW_DYNAMIC_MS) {
+        shadowRig.sigAt = now;
+        const sig = _shadowCasterSignature();
+        if (sig !== shadowRig.casterSig) { shadowRig.casterSig = sig; _requestShadowUpdate(); }
     }
 }
 
@@ -2937,49 +3300,179 @@ function resize() {
     }
 }
 
+/* ---------------------------------------------------------------- 观察者与 HUD
+   「观察者」= 镜头正在跟随的人（第一/第三跟随），否则是自己。HUD 的距离、敌我和
+   贴脸判定都以观察者为准：复盘时切到别人的第一视角，看到的是那个人面对的威胁。 */
+let frameViewer = null;
+function _resolveViewer(data) {
+    const local = data?.local;
+    const selfTeam = Number(local?.team) || 0;
+    if (cameraMode !== CAMERA_MODES.FREE && followTarget && followTarget.kind !== 'self') {
+        const hit = _resolveFollowTargetData(followTarget, data);
+        if (hit && Number.isFinite(hit.x) && Number.isFinite(hit.y)) {
+            const team = hit.kind === 'mate' ? (selfTeam || Number(hit.team) || 0) : (Number(hit.team) || 0);
+            return { x: hit.x, y: hit.y, z: hit.z, key: hit.key, self: false, ai: hit.kind === 'ai', team, selfTeam };
+        }
+    }
+    if (local && Number.isFinite(local.x) && Number.isFinite(local.y)) {
+        return { x: local.x, y: local.y, z: local.z, key: '__self', self: true, ai: false, team: selfTeam, selfTeam };
+    }
+    return null;
+}
+function _isEnemyOfViewer(viewer, src, isSelf) {
+    if (!viewer || !src) return false;
+    if (viewer.self) return src.kind === 'player' || src.kind === 'ai';
+    if (viewer.ai) return src.kind !== 'ai';
+    if (src.kind === 'ai') return true;
+    const team = isSelf ? viewer.selfTeam
+        : src.kind === 'mate' ? (viewer.selfTeam || Number(src.team) || 0) : (Number(src.team) || 0);
+    return !(viewer.team > 0 && team === viewer.team);
+}
+
+let hud = null;
+const hudItems = [];
+let hudCount = 0;
+const hudOpt = { foe: true, ray: false, box: false, warn: true, warnD: 150, warnR: 200, warnSz: 100,
+    fontScale: 1, alertColor: PALETTE.alert, downColor: PALETTE.down };
+
+function _hudPush(entity, isSelf, viewer, disp, alertD) {
+    const src = entity.src;
+    if (!entity.root.visible || !src) return;
+    const key = isSelf ? '__self' : src.key;
+    if (viewer && key === viewer.key) return;              // 观察者本人不画
+    if (isSelf ? src.dead : src.alive === false) return;    // 阵亡由 3D 信息卡的暗色表达
+    const enemy = _isEnemyOfViewer(viewer, src, isSelf);
+    const dist = viewer ? Math.hypot(src.x - viewer.x, src.y - viewer.y) * UE_TO_M : null;
+    const stale = !!(src._out_of_range || src.out_of_range || src.spawn_mark);
+    // 与 2D 一致的滞回：进入用 alertD，退出用 1.25×alertD，阈值边缘不闪
+    const alert = enemy && !stale && alertD > 0 && dist != null
+        && dist <= (entity.hudAlert ? alertD * 1.25 : alertD);
+    entity.hudAlert = alert;
+    const it = hudItems[hudCount] || (hudItems[hudCount] = {});
+    hudCount++;
+    const pos = entity.root.position;
+    it.x = pos.x; it.y = pos.y; it.z = pos.z;
+    it.scale = entity.modelScale || 1;
+    it.color = entity.identityColor ?? PALETTE.unknown;
+    it.enemy = enemy; it.alert = alert; it.ai = src.kind === 'ai';
+    it.down = src.status_key === 'down' || src.status_key === 'dying';
+    it.spawn = !!src.spawn_mark; it.stale = stale; it.dist = dist;
+    it.hp = disp.showHealth !== false && src.maxHp > 0 && Number.isFinite(src.hp)
+        ? Math.max(0, Math.min(1, src.hp / src.maxHp)) : null;
+    it.far = !it.ai && !entity.sprite?.visible;
+    if (it.far) {
+        const name = disp.showName !== false ? (isSelf ? '自己' : (src.hero || src.displayName || '')) : '';
+        const d = disp.showDistance !== false && dist != null ? Math.round(dist) + 'm' : '';
+        it.text = name && d ? name + ' ' + d : name || d;
+    } else it.text = '';
+}
+
+function _drawHud(now, data) {
+    if (!hud) return;
+    const disp = window.AppState?.display || {};
+    const h = disp.hud || {};
+    hudOpt.foe = h.foe !== 0; hudOpt.ray = !!h.ray; hudOpt.box = !!h.box3d;
+    hudOpt.warn = !!h.warn3d; hudOpt.warnD = Number(h.warnd) || 0;
+    hudOpt.warnR = Number(h.warnr) || 200; hudOpt.warnSz = Number(h.warnsz) || 100;
+    hudOpt.fontScale = Number(disp.fontScale) || 1;
+    hudOpt.alertColor = PALETTE.alert; hudOpt.downColor = PALETTE.down;
+    hudCount = 0;
+    if (data) {
+        const viewer = frameViewer, alertD = Number(h.alert) || 0;
+        for (const e of POOL.players) if (e.root.visible) _hudPush(e, false, viewer, disp, alertD);
+        if (selfEntity && data.local) _hudPush(selfEntity, true, viewer, disp, alertD);
+        if (disp.showAIs !== false) for (const e of POOL.ais) if (e.root.visible) _hudPush(e, false, viewer, disp, alertD);
+    }
+    // 点位与雷达：开关、筛选与 2D 同一份偏好（adapter 经 display.hud 透传）
+    const viewer = data ? frameViewer : null;
+    hudExtra.poiCount = 0;
+    if (poiLayer) {
+        poiLayer.setLevel(h.poilevel);
+        poiLayer.setVisible(h.poiexit !== 0);
+        if (h.poiboxoff !== hudBoxOffRaw) { hudBoxOffRaw = h.poiboxoff; hudPoiOpt.boxOff = poiLayer.parseBoxOff(hudBoxOffRaw); }
+        hudPoiOpt.exit = h.poiexit !== 0; hudPoiOpt.box = h.poibox !== 0;
+        hudPoiOpt.boxD = Number.isFinite(Number(h.poiboxd)) ? Number(h.poiboxd) : 60;
+        hudExtra.poiCount = poiLayer.collect(viewer, hudPoiOpt);
+        hudExtra.pois = poiLayer.items;
+    }
+    const rd = hudExtra.radar;
+    rd.on = h.radar3d !== 0 && !!viewer;
+    if (rd.on) {
+        rd.range = Number(h.radarr) || 150;
+        rd.x = viewer.x * UE_TO_M; rd.y = -viewer.y * UE_TO_M;
+        rd.z = Number.isFinite(viewer.z) ? viewer.z * UE_TO_M : null;
+    }
+    hud.draw(camera, hudItems, hudCount, hudOpt, now, hudExtra);
+}
+
+/* 点位图层随 HUD 一起创建：此时模块已求值完毕，可以安全地向 gateway 注册装图回调。 */
+let poiLayer = null, hudBoxOffRaw = null;
+const hudPoiOpt = { exit: true, box: true, boxD: 60, boxOff: null };
+const hudExtra = { pois: null, poiCount: 0, radar: { on: false, range: 150, x: 0, y: 0, z: null } };
+function _ensurePoiLayer() {
+    if (poiLayer) return;
+    poiLayer = createPoiLayer();
+    gateway.onMapInstalled((name, mesh) => poiLayer.install(name, mesh, scene));
+    if (mapMesh && currentMapName) poiLayer.install(currentMapName, mapMesh, scene);
+}
+
+/* 侧边血条是 XY 平面网格：在 Z 朝上的世界里它是平躺的，又关了深度测试，
+   看上去是一条贯穿人物的黑线。每帧把它竖起来、转向镜头，并放在镜头视角下人物的左侧。 */
+const _hpWorldQ = new THREE.Quaternion(), _hpRootInv = new THREE.Quaternion();
+const _hpEuler = new THREE.Euler(0, 0, 0, 'ZXY'), _hpOffset = new THREE.Vector3();
+function _billboardHpBar(entity, camPos) {
+    const g = entity?.hpBar?.group;
+    if (!g || !g.visible || !entity.root.visible) return;
+    const p = entity.root.position;
+    const theta = Math.atan2(camPos.y - p.y, camPos.x - p.x);   // 人物 → 镜头的水平方向
+    _hpEuler.set(Math.PI / 2, 0, theta + Math.PI / 2, 'ZXY');   // 先竖起（长边朝上），再让正面朝镜头
+    _hpWorldQ.setFromEuler(_hpEuler);
+    _hpRootInv.copy(entity.root.quaternion).invert();           // 根节点只有绕 Z 的朝向
+    g.quaternion.copy(_hpRootInv).multiply(_hpWorldQ);
+    const off = 0.55 * (entity.modelScale || 1);
+    g.position.copy(_hpOffset.set(Math.sin(theta) * off, -Math.cos(theta) * off, 0).applyQuaternion(_hpRootInv));
+}
+
 let gatewayLastSlow = 0, gatewaySlowData = null, gatewayFrameAt=0, gatewayFps=0, gatewayFrames=0, gatewayFpsAt=0;
 function tick() {
-    // 只有 3D 视图激活时才处理数据 (性能)
     const active = window.viewMode === '3d';
     const frameAt=performance.now(), cap=Number(window.AppState?.display?.fpscap)||0;
-    if(active && cap>0 && frameAt-gatewayFrameAt<1000/cap-0.5)return;
+    if (!active) {
+        // 2D 模式下完全不做 3D 工作；以前仍每帧更新相机、跟随、光照与 shader uniform
+        gatewayFps=0;gatewayFrames=0;gatewayFpsAt=frameAt;
+        hud?.clear();
+        return;
+    }
+    if(cap>0 && frameAt-gatewayFrameAt<1000/cap-0.5)return;
     gatewayFrameAt=frameAt;
-    if(active){gatewayFrames++;if(frameAt-gatewayFpsAt>=1000){gatewayFps=gatewayFrames*1000/(frameAt-gatewayFpsAt);gatewayFrames=0;gatewayFpsAt=frameAt;}}
-    else {gatewayFps=0;gatewayFrames=0;gatewayFpsAt=frameAt;}
-    if (active) {
-        const data = window.AppState?.gameData;
-        const frameCount = window.AppState?.frameCount ?? 0;
-        // 调试: 每 3 秒打印一次数据健康度
-        const now = performance.now();
-        window._dbgLastLog = window._dbgLastLog || 0;
-        if (now - window._dbgLastLog > 3000) {
-            window._dbgLastLog = now;
-            console.log(`[Radar3D] frame=${frameCount} data=${data?'yes':'no'} players=${data?.players?.length ?? 'undef'} bosses=${data?.bosses?.length ?? 'undef'} ais=${data?.ais?.length ?? 'undef'} items=${data?.items?.length ?? 'undef'} map=${data?.map?.name ?? 'undef'}`);
+    gatewayFrames++;if(frameAt-gatewayFpsAt>=1000){gatewayFps=gatewayFrames*1000/(frameAt-gatewayFpsAt);gatewayFrames=0;gatewayFpsAt=frameAt;}
+    const data = window.AppState?.gameData;
+    const frameCount = window.AppState?.frameCount ?? 0;
+    const now = frameAt;
+    frameViewer = data ? _resolveViewer(data) : null;
+    if (data) {
+        // Human replay poses are presented each animation frame by the adapter.
+        const disp = window.AppState?.display || {};
+        updatePlayers(disp.showPlayers === false ? [] : data.players);
+        if (now - gatewayLastSlow >= 100 || gatewaySlowData !== data.slowRevision) {
+            updateBosses(disp.showBosses === false ? [] : data.bosses);
+            updateAIs(disp.showAIs === false ? [] : data.ais);
+            updateItems(disp.showItems === false ? [] : data.items);
+            gatewayLastSlow = now; gatewaySlowData = data.slowRevision;
         }
-        if (data) {
-            // Human replay poses are presented each animation frame by the adapter.
-            const disp = window.AppState?.display || {};
-            updatePlayers(disp.showPlayers === false ? [] : data.players);
-            if (now - gatewayLastSlow >= 100 || gatewaySlowData !== data.slowRevision) {
-                updateBosses(disp.showBosses === false ? [] : data.bosses);
-                updateAIs(disp.showAIs === false ? [] : data.ais);
-                updateItems(disp.showItems === false ? [] : data.items);
-                gatewayLastSlow = now; gatewaySlowData = data.slowRevision;
-            }
-            /* v700x: 本人 (data.local) 单独更新, 相机默认跟随它 */
-            updateSelf(data.local);
-            /* thirdPerson/firstPerson 没有目标时自动回到房主；free 永不自动跟随。 */
-            if (data.local && cameraMode !== CAMERA_MODES.FREE && !followTarget) {
-                _setFollowTarget({ kind: 'self', name: '__self__' });
-                console.log('[Radar3D] 默认跟随本人');
-            }
-            _hideFirstPersonFollowedEntity();
-            // 地图切换只在 frame 变时判 (避免每帧字符串比较)
-            if (frameCount !== lastFrameCount) {
-                lastFrameCount = frameCount;
-                if (data.map && data.map.name && data.map.name !== currentMapName) {
-                    loadMap(data.map.name);
-                }
+        /* v700x: 本人 (data.local) 单独更新, 相机默认跟随它 */
+        updateSelf(data.local);
+        /* thirdPerson/firstPerson 没有目标时自动回到房主；free 永不自动跟随。 */
+        if (data.local && cameraMode !== CAMERA_MODES.FREE && !followTarget) {
+            _setFollowTarget({ kind: 'self', name: '__self__' });
+            console.log('[Radar3D] 默认跟随本人');
+        }
+        _hideFirstPersonFollowedEntity();
+        // 地图切换只在 frame 变时判 (避免每帧字符串比较)
+        if (frameCount !== lastFrameCount) {
+            lastFrameCount = frameCount;
+            if (data.map && data.map.name && data.map.name !== currentMapName) {
+                loadMap(data.map.name);
             }
         }
     }
@@ -3016,19 +3509,30 @@ function tick() {
             const s = Math.max(0.4, Math.min(30, worldH / baseH));
             sp.scale.set(baseW * s, baseH * s, 1);
         };
-        for (const e of POOL.players) scaleSprite(e.sprite);
-        for (const e of POOL.bosses)  scaleSprite(e.sprite);
-        for (const e of POOL.ais)     scaleSprite(e.sprite);
+        for (const e of POOL.players) { scaleSprite(e.sprite); _billboardHpBar(e, camPos); }
+        for (const e of POOL.bosses)  { scaleSprite(e.sprite); _billboardHpBar(e, camPos); }
+        for (const e of POOL.ais)     { scaleSprite(e.sprite); _billboardHpBar(e, camPos); }
         /* v700x3: 物品名字 sprite 不走 scaleSprite, 保留世界固定尺寸(1.6m 宽),
            自然透视缩放 — 远了小近了大, 一堆物品不会挤成一片. */
-        if (selfEntity) scaleSprite(selfEntity.sprite);
+        if (selfEntity) { scaleSprite(selfEntity.sprite); _billboardHpBar(selfEntity, camPos); }
 
         const usePostProcessing = composer && (
             ssaoPass?.enabled || bloomPass?.enabled ||
             structureEdgePass?.enabled || fxaaPass?.enabled
         );
+        if (skyDome?.visible) skyDome.position.copy(camera.position);
+        const shadowPass = renderer.shadowMap.enabled && renderer.shadowMap.needsUpdate;
         if (usePostProcessing) composer.render();
         else renderer.render(scene, camera);
+        // 诊断：阴影图重画频率（r161 的 renderer.info 在阴影 pass 之后才清零，只反映主 pass；
+        // 阴影 pass 的量见 stat().mapCull.shadow）
+        if (shadowPass) { shadowRig.lastAt = frameAt; shadowRig.updates++; }
+        if (frameAt - shadowRig.rateAt >= 2000) {
+            shadowRig.rate = shadowRig.updates * 1000 / Math.max(1, frameAt - shadowRig.rateAt);
+            shadowRig.updates = 0; shadowRig.rateAt = frameAt;
+        }
+        // HUD 必须在 render 之后：此时相机 matrixWorldInverse 才是本帧的
+        _drawHud(frameAt, data);
         drawMinimap();
         _monitorAutoRenderQuality(performance.now(), active);
     }
@@ -3038,44 +3542,188 @@ function tick() {
 //  启动
 // ============================================================================
 
-function gatewayInstallGeometry(name, geo) {
-    const scaled = geo.getAttribute('position').array;
-    const nTri = (geo.index ? geo.index.count : geo.getAttribute('position').count) / 3;
-    currentMapTriangleCount = nTri;
-    if (mapMesh) {
-        scene.remove(mapMesh);
-        mapMesh.geometry.dispose();
-        _disposeRadarMapMaterials(mapMesh);
-        mapMesh = null;
+/* 地图装载完成的扩展点：POI、底图纹理等附加图层在这里拿到 mapMesh 再构建，
+   不必改动装图流程本身。监听器异常只记录，不影响地图显示。 */
+const mapInstalledListeners = [];
+function _notifyMapInstalled(name) {
+    for (const fn of mapInstalledListeners) {
+        try { fn(name, mapMesh); } catch (error) { console.error('[Radar3D] 地图装载监听器失败', error); }
     }
-    if (mapMeshWire) { scene.remove(mapMeshWire); mapMeshWire.geometry.dispose(); mapMeshWire.material.dispose(); mapMeshWire = null; }
+}
 
+/* ---------------------------------------------------------------- 官方底图投影 */
+function _mapTexZoom() {
+    const profile = activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()];
+    return profile.id === 'performance' ? 3 : 4;
+}
 
-    geo.computeVertexNormals();
+function _resetMapTexture(key) {
+    mapTex.abort?.abort();
+    mapTex.abort = null;
+    for (const entry of mapTex.entries.values()) entry.texture?.dispose();
+    mapTex.entries.clear();
+    mapTex.pending.clear();
+    mapTex.key = key;
+}
+
+// 优先用当前画质档的缩放级；还没下载完时先用已有的另一级
+function _currentMapTexEntry() {
+    const exact = mapTex.entries.get(_mapTexZoom());
+    if (exact?.texture) return exact;
+    for (const entry of mapTex.entries.values()) if (entry.texture) return entry;
+    return null;
+}
+
+function _applyMapTextureUniforms() {
+    const entry = mapTex.enabled ? _currentMapTexEntry() : null;
+    const style = _mapStyle();
+    const tex = style.mapTex || { strength: 0, tint: 0, wall: 0 };
+    for (const material of _getRadarMapMaterials()) {
+        const u = material?.userData?.radarUniforms;
+        if (!u?.radarMapTex) continue;
+        if (entry) {
+            u.radarMapTex.value = entry.texture;
+            u.radarMapUvMatrix.value.copy(entry.matrix);
+            u.radarMapStrength.value = tex.strength;
+        } else {
+            u.radarMapTex.value = _radarBlankMapTexture();
+            u.radarMapStrength.value = 0;
+        }
+        u.radarMapTint.value = tex.tint;
+        u.radarMapWallTint.value = tex.wall;
+        u.radarAoStrength.value = style.ao ?? 0.85;
+    }
+}
+
+/* 应用当前纹理；缺当前缩放级时后台拼瓦片（同一图同一级只下载一次，失败也记下不重试）。 */
+function _syncMapTexture() {
+    _applyMapTextureUniforms();
+    if (!mapTex.enabled || !mapTex.key || !mapBounds || !renderer || !mapMesh) return;
+    const zoom = _mapTexZoom();
+    if (mapTex.entries.has(zoom) || mapTex.pending.has(zoom)) return;
+    const key = mapTex.key;
+    if (!mapTex.abort) mapTex.abort = new AbortController();
+    const signal = mapTex.abort.signal;
+    const bounds = { minX: mapBounds.min.x, minY: mapBounds.min.y, maxX: mapBounds.max.x, maxY: mapBounds.max.y };
+    const job = buildMapTexture(key, bounds, {
+        zoom, signal, concurrency: 6,
+        maxSize: Math.min(4096, renderer.capabilities.maxTextureSize || 4096),
+        anisotropy: Math.min(8, renderer.capabilities.getMaxAnisotropy?.() || 1),
+    }).then(built => {
+        if (signal.aborted || mapTex.key !== key) { built?.texture?.dispose(); return; }
+        mapTex.entries.set(zoom, built?.texture ? built : { texture: null });
+        if (built?.texture) console.log(`[Radar3D] 底图投影 ${key} z${built.zoom} ${built.size.join('×')} · 瓦片 ${built.loaded}/${built.tiles} · ${built.ms}ms`);
+        else console.warn(`[Radar3D] 底图投影 ${key}：没有可用瓦片，保持原色`);
+        _applyMapTextureUniforms();
+    }).catch(error => {
+        if (error?.name === 'AbortError' || mapTex.key !== key) return;
+        mapTex.entries.set(zoom, { texture: null });
+        console.warn('[Radar3D] 底图投影失败，保持原色:', error);
+    }).finally(() => { if (mapTex.pending.get(zoom) === job) mapTex.pending.delete(zoom); });
+    mapTex.pending.set(zoom, job);
+}
+
+/* ---------------------------------------------------------------- 地图装载（分块） */
+function _disposeMapGroup(group) {
+    if (!group) return;
+    scene.remove(group);
+    for (const chunk of group.children) chunk.geometry?.dispose();
+    _disposeRadarMapMaterials(group);
+}
+
+/* 接管传入几何：缓冲区会转移到切块 Worker，调用方之后不得再读 geo 的数组。
+   包围盒同步算出（fit 立即可用），分块完成后才替换旧地图并通知 onMapInstalled。
+   返回 Promise（装好时 resolve）；失败只记录与提示，不抛出。 */
+function gatewayInstallGeometry(name, geo) {
+    const seq = ++mapInstallSeq;
+    const position = geo.getAttribute('position');
+    const nTri = (geo.index ? geo.index.count : position.count) / 3;
+    currentMapTriangleCount = nTri;
     geo.computeBoundingBox();
-    const heightRange = _sampleMapHeightRange(scaled);
-    const plainMaterial = _createRadarMapMaterial(heightRange.low, heightRange.high, false);
-    const wallMaterial = _createRadarMapMaterial(heightRange.low, heightRange.high, false);
+    mapBounds = geo.boundingBox.clone();
+    const heightRange = _sampleMapHeightRange(position.array);
+    // 除 position / normal 外的逐顶点属性（如 bake）原样随块携带
+    const extras = [];
+    for (const [attrName, attr] of Object.entries(geo.attributes)) {
+        if (attrName === 'position' || attrName === 'normal') continue;
+        if (attr.isInterleavedBufferAttribute || !attr.array?.buffer) {
+            console.warn(`[Radar3D] 地图属性 ${attrName} 为交错/非类型数组，分块时丢弃`);
+            continue;
+        }
+        extras.push({ name: attrName, array: attr.array, itemSize: attr.itemSize, normalized: !!attr.normalized });
+    }
+    const meta = extras.map(a => ({ name: a.name, itemSize: a.itemSize, normalized: a.normalized }));
+    if (mapTex.key !== name) _resetMapTexture(name);
+    const t0 = performance.now();
+    return buildMapChunksAsync(position.array, geo.index?.array || null, extras, { targetTriangles: 20000, maxChunks: 300 })
+        .then(result => {
+            if (seq !== mapInstallSeq) return;
+            _installMapChunks(name, result, heightRange, meta, nTri);
+            console.log(`[Radar3D] 地图 ${name}：${nTri} 面 → ${result.stats.chunks} 块（Uint16 ${result.stats.uint16Chunks}），`
+                + `切块 ${result.stats.ms}ms，装图共 ${Math.round(performance.now() - t0)}ms`);
+        })
+        .catch(error => {
+            if (seq !== mapInstallSeq) return;
+            console.error('[Radar3D] 地图分块失败', error);
+            window.showRadarToast?.('3D 地图构建失败：' + (error?.message || error));
+        });
+}
+
+function _installMapChunks(name, result, heightRange, meta, nTri) {
+    if (mapMesh) { _disposeMapGroup(mapMesh); mapMesh = null; }
+    if (mapMeshWire) { scene.remove(mapMeshWire); mapMeshWire.geometry.dispose(); mapMeshWire.material.dispose(); mapMeshWire = null; }
+    const hasBake = meta.some(a => a.name === 'bake' && a.itemSize === 2);
+    const plainMaterial = _createRadarMapMaterial(heightRange.low, heightRange.high, false, hasBake);
+    const wallMaterial = _createRadarMapMaterial(heightRange.low, heightRange.high, false, hasBake);
     wallMaterial.transparent = true; wallMaterial.opacity = 1 - gatewaySurfacePrefs.walltrans / 100; wallMaterial.depthWrite = false;
     wallMaterial.forceSinglePass = true;
-    const partition = splitSurfaceIndices(geo.attributes.position.array,geo.index?.array);
-    geo.setIndex(new THREE.BufferAttribute(partition.indices,1));
-    geo.clearGroups();geo.addGroup(0,partition.horizontal,0);geo.addGroup(partition.horizontal,partition.vertical,1);
-    const materials = [plainMaterial,wallMaterial];
-    mapMesh = new THREE.Mesh(geo,materials);
-    mapMesh.userData.radarMaterials = {plain:materials};
+    const materials = [plainMaterial, wallMaterial];
+    // 地图材质是 flatShading，不需要真实顶点法线；但阴影 normalBias 会 normalize 法线，缺属性时
+    // 是零向量 → NaN，地图收不到阴影。所以给常量朝上的 8 位法线，各块共用同一段内存。
+    let maxVerts = 0;
+    for (const c of result.chunks) maxVerts = Math.max(maxVerts, c.position.length / 3);
+    const upNormal = new Int8Array(maxVerts * 3);
+    for (let i = 2; i < upNormal.length; i += 3) upNormal[i] = 127;
+    const group = new THREE.Group();
+    group.name = 'radar-map';
+    let floor = 0, wall = 0;
+    for (const c of result.chunks) {
+        const g = new THREE.BufferGeometry();
+        const count = c.position.length / 3;
+        g.setAttribute('position', new THREE.BufferAttribute(c.position, 3));
+        g.setAttribute('normal', new THREE.BufferAttribute(upNormal.subarray(0, count * 3), 3, true));
+        for (const a of meta) g.setAttribute(a.name, new THREE.BufferAttribute(c.attributes[a.name], a.itemSize, a.normalized));
+        g.setIndex(new THREE.BufferAttribute(c.index, 1));
+        g.addGroup(0, c.floorCount, 0);
+        g.addGroup(c.floorCount, c.wallCount, 1);
+        g.boundingBox = new THREE.Box3(new THREE.Vector3(c.box[0], c.box[1], c.box[2]), new THREE.Vector3(c.box[3], c.box[4], c.box[5]));
+        g.boundingSphere = new THREE.Sphere(new THREE.Vector3(c.sphere[0], c.sphere[1], c.sphere[2]), c.sphere[3]);
+        const mesh = new THREE.Mesh(g, materials);
+        mesh.matrixAutoUpdate = false;
+        mesh.userData.radarMapChunk = true;
+        group.add(mesh);
+        floor += c.floorCount / 3; wall += c.wallCount / 3;
+    }
+    group.matrixAutoUpdate = false;
+    group.updateMatrixWorld(true);
+    mapMesh = group;
+    mapMesh.userData.radarMaterials = { plain: materials };
+    mapMesh.userData.activeMaterial = materials;
     mapMesh.userData.gatewayTransparentWalls = true;
+    mapMesh.userData.surfaceCounts = { floor, wall };
+    mapMesh.userData.chunkStats = result.stats;
+    mapMesh.userData.hasBake = hasBake;
     applyGatewaySurfaceOpacity();
-    mapMesh.userData.surfaceCounts = {floor:partition.horizontal/3,wall:partition.vertical/3};
-    mapMesh.userData.radarLitSurface = true;
-    mapMesh.userData.radarShadowCaster = false;
-    mapMesh.userData.radarShadowReceiver = true;
     scene.add(mapMesh);
-    const bb = geo.boundingBox;
+    // 占位网格与半透明地面固定在 z=0，而地形高度常是负数：有地图时它们会悬在
+    // 地面上空，第一视角抬头能看到网格线，还白白多一层全屏透明叠加。
+    if (gridHelper) gridHelper.visible = false;
+    if (groundMesh) groundMesh.visible = false;
+    const bb = mapBounds;
     const rx = bb.max.x - bb.min.x, ry = bb.max.y - bb.min.y, rz = bb.max.z - bb.min.z;
     const diagonal = Math.hypot(rx, ry, rz);
-    camera.far = THREE.MathUtils.clamp(diagonal * 1.6 + 1000, 6000, 60000);
-    camera.updateProjectionMatrix();
+    mapFarPlane = THREE.MathUtils.clamp(diagonal * 1.6 + 1000, 6000, 60000);
+    _applyViewModeRendering();
     if (requestedRenderQuality === 'auto') {
         const nextCeiling = nTri > 700000 ? 'balanced' : null;
         if (autoQualityCeiling !== nextCeiling) {
@@ -3088,12 +3736,16 @@ function gatewayInstallGeometry(name, geo) {
     }
     _applyQualityToSceneObjects(activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()]);
     _applyMapMaterialQuality(activeQualityProfile || RENDER_QUALITY_PROFILES[_resolvedRenderQualityId()]);
+    _applyMapStyle();
     _updateIndoorClarityUniforms();
     _syncSsaoCameraParameters();
     qualityMonitor.frames = 0;
     qualityMonitor.sampleStartedAt = 0;
     qualityMonitor.lastFrameAt = 0;
     qualityMonitor.warmupUntil = performance.now() + 8000;
+    _syncMapTexture();
+    _requestShadowUpdate();
+    _notifyMapInstalled(name);
     // 地图异步完成只更新场景，不改任何镜头模式或用户当前视角。
     console.log(`[Radar3D] 地图 ${name} 已加入场景，高度色域 ${heightRange.low.toFixed(1)}~${heightRange.high.toFixed(1)}m`);
 }
@@ -3115,17 +3767,32 @@ export const gateway = {
             surfaces:{floorOpacity:_getRadarMapMaterials()[0]?.opacity,wallTransparency:gatewaySurfacePrefs.walltrans},
             walls:{cutout:indoorClarityActive,opacity:_getRadarMapMaterials()[1]?.opacity,depthWrite:_getRadarMapMaterials()[1]?.depthWrite,counts:mapMesh?.userData.surfaceCounts}};
     },
-    init, resize, installGeometry: gatewayInstallGeometry,
+    init, resize, installGeometry: gatewayInstallGeometry, setPalette,
+    onMapInstalled(fn) { if (typeof fn === 'function') mapInstalledListeners.push(fn); },
+    setHud(canvas) { hud = canvas ? createHud(canvas) : null; _ensurePoiLayer(); },
     follow(kind,name){
         if(followTarget?.kind===kind && followTarget?.name===name && cameraMode!==CAMERA_MODES.FREE)return;
         _setFollowTarget({kind,name});
     },
     preferences(p){
-        for (const key of ['walltrans','floortrans']) {
+        if (MAP_STYLES[p.mapstyle3d] && p.mapstyle3d !== mapStyleId) {
+            mapStyleId = p.mapstyle3d;
+            _applyMapStyle();
+            _applyMapViewStyle();
+        }
+        for (const key of ['walltrans','floortrans','followwalltrans']) {
             if (Number.isFinite(p[key])) gatewaySurfacePrefs[key] = THREE.MathUtils.clamp(p[key], 0, 100);
         }
         applyGatewaySurfaceOpacity();
         if(camera && Number.isFinite(p.fov)){camera.fov=p.fov;camera.updateProjectionMatrix();}
+        if (p.maptex3d !== undefined && (Number(p.maptex3d) !== 0) !== mapTex.enabled) {
+            mapTex.enabled = Number(p.maptex3d) !== 0;
+            _syncMapTexture();
+        }
+        if (['auto', 'on', 'off'].includes(p.shadow3d) && p.shadow3d !== shadowPref) {
+            shadowPref = p.shadow3d;
+            if (renderer) _applyRenderQuality();
+        }
     },
     fit: fitToAll, top() { window.radar3dSetCameraMode('free');
         const target = controls.target; const distance = camera.position.distanceTo(target);
@@ -3133,5 +3800,11 @@ export const gateway = {
     stat() { return { fps: gatewayFps, tris: currentMapTriangleCount, players: POOL.players.filter(e => e.root.visible).length,
         playerKeys: POOL.players.filter(e => e.root.visible).map(e => e.root.userData.entityKey),
         humanPlayers: POOL.players.filter(e=>e.root.visible && !window.AppState?.gameData?.players.find(p=>p.key===e.root.userData.entityKey)?.is_bot).length,
-        mapBounds: mapMesh?.geometry.boundingBox?.clone(), renderCalls: renderer?.info.render.calls || 0 }; }
+        mapBounds: mapBounds?.clone(), renderCalls: renderer?.info.render.calls || 0,
+        triangles: renderer?.info.render.triangles || 0,
+        mapChunks: mapMesh?.userData.chunkStats || null, mapBake: !!mapMesh?.userData.hasBake,
+        mapCull: { camera: _mapCullStats(camera), shadow: renderer?.shadowMap.enabled ? _mapCullStats(dirLight?.shadow.camera) : null },
+        mapTexture: { enabled: mapTex.enabled, key: mapTex.key, zooms: [...mapTex.entries.entries()].map(([z, e]) => ({ zoom: z, ok: !!e.texture, size: e.size, loaded: e.loaded, tiles: e.tiles })) },
+        shadow: { enabled: !!renderer?.shadowMap.enabled, pref: shadowPref, span: shadowRig.span, mapSize: dirLight?.shadow.mapSize.x || 0,
+            updatesPerSec: Math.round(shadowRig.rate * 10) / 10 } }; }
 };

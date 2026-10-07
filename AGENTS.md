@@ -27,15 +27,19 @@ UI **轮询同源 REST 接口**，不直连游戏服务器。
 │   ├── shubao.css          # 主题覆盖
 │   └── icons/
 ├── m3d/
-│   ├── r3d.js              # 3D 引擎：相机模式、画质档、第一视角平滑
-│   ├── korr-adapter.js     # 快照 → 3D 桥接 + 回放插值
-│   ├── korr-renderer.js    # 地形 GLB、遮挡样式、人物网格
+│   ├── manifest.json       # 各地形 GLB 元数据（rev、bytes、place…）
+│   ├── *.glb               # 地形白模（gitignore，约 380 MB，本地必备）
+│   ├── r3d.js              # 旧 3D 引擎；当前只复用其中的 parseGLB
+│   ├── korr-adapter.js     # 快照 → 3D 桥接 + 回放插值 + GLB 流式加载
+│   ├── korr-renderer.js    # 当前 3D 引擎：地形、地图风格、相机模式、人物网格
+│   ├── korr-hud.js         # 3D 战术 HUD：敌人标识、远距名牌、方框、连线、屏外预警箭头
 │   ├── gateway-pose.js     # 姿态 / 瞄准展示（历史文件名，勿改引用）
 │   └── character-models.js
 ├── avatars/                # 干员头像 PNG（文件名 = 干员代号）
 ├── vendor/                 # 内嵌 Leaflet + Three.js（除升级外勿改）
 ├── dev/
-│   ├── server.mjs          # 本地静态服务 + 样例 API
+│   ├── server.mjs          # 本地静态服务 + 样例 API（人物按确定性轨迹移动、回放循环）
+│   ├── smoke.mjs           # 无头 Chrome 冒烟 + 性能采样（2D / 3D 跟随 / 第一视角截图）
 │   └── fixtures/           # 样例 state / status JSON
 └── resources/              # 可选物品图标（运行时由外部目录提供）
 ```
@@ -45,7 +49,7 @@ UI **轮询同源 REST 接口**，不直连游戏服务器。
 1. 轮询 `GET /api/state`（实时约 20 Hz；回放暂停/跳转时走回放时钟）。
 2. 轮询 `GET /api/status` 获取会话 / 回放元数据。
 3. 启动时 `GET /api/map` 返回地图目录（边界、旋转、默认地图 key）。
-4. 3D 地形从 `/m3d/<map>.glb` 加载；可选 `/api/map/<name>/meta` 做缓存标记。
+4. 3D 地形从同源静态路径 `/m3d/<file>.glb?v=<rev>` 加载（见 `manifest.json`）。
 5. 用户偏好存于 `localStorage`，前缀 `nr2_<key>`（遗留命名，迁移时需谨慎）。
 
 ## API 契约（不可破坏）
@@ -125,8 +129,14 @@ item_id, grade, price
 - 世界坐标为 **UE 厘米**。地图投影用 `MAP_INFO`（center、rotate、width/height、`bj` 比例）。
 - 3D：`x = ue_x/100`，高度 = `ue_z/100`，深度 = `ue_y/100`。
 - 朝向：UE 风格 —— +X 为 0°，向 +Y 增大；3D 绕 **−Y** 轴旋转。
-- 2D 标记在快照间做平滑插值（`SM_TAU`）；3D 第一视角用缓冲插值 —— 改相机代码前先读 `r3d.js`。
-- 勿在未测卡顿的情况下去掉池化 Map（`_rc`、`opRows`、`lootRows`）。
+- 2D 标记在快照间做平滑插值（`SM_TAU`）；3D 回放插值在 `gateway-pose.js` 的 `PosePresenter`，相机状态机在 `korr-renderer.js`（`updateFollow`）。
+- 勿在未测卡顿的情况下去掉池化 Map（`_rc`、`opRows`、`lootRows`、`infos`）。
+- 2D 每个干员只挂两个 Leaflet marker：主体标记 + 信息堆（`updInfo`：敌人标识 / 信息条 / 装备 / 血条），偏移用 CSS `--mks` 计算，不要回到逐条 marker + 离屏测宽。
+- 色板只有一份：`index.html` 的 `TEAM_COLORS` / `C_*`，通过 `create({palette})` 下发给 3D。不要在 3D 里另起色板。
+- 3D 敌我、距离、贴脸都以「观察者」为准：跟随某人时是被跟随者，否则是自己（`_resolveViewer`）。
+- 3D 墙体透明度：自由/俯视用 `walltrans`，第一/第三跟随用 `followwalltrans`；不透明度 ≥50% 的墙写深度，墙后人物走「掩体后」x 光剪影（该遍材质 `fog:false`）。
+- 地图风格 `mapstyle3d`：`real`（写实白模：天空穹顶、大气雾、日光）/ `tactical`（深色青调）。配色与雾距在 `MAP_STYLES`。
+- 地形材质是 `flatShading`，不需要真实顶点法线；装图时只放一个常量朝上的 8 位 normal 属性（不能删掉：阴影 normalBias 会 normalize 法线，缺属性得到 NaN，地图收不到阴影）。
 
 ## 本地开发
 
@@ -136,7 +146,14 @@ item_id, grade, price
 npm run dev   # http://127.0.0.1:5173
 ```
 
-`dev/server.mjs` 提供静态文件与样例版 `/api/*`。改 JS/CSS 后硬刷新（`Ctrl+Shift+R`）；模块 URL 改动后记得 bump `?v=`。
+`dev/server.mjs` 提供静态文件与样例版 `/api/*`。改 JS/CSS 后硬刷新（`Ctrl+Shift+R`）；模块 URL 改动后记得 bump `?v=`（3D 模块链：`index.html` → `korr-adapter.js` → `korr-renderer.js` → `korr-hud.js` / `character-models.js`，改下游要逐级 bump）。
+
+冒烟与性能采样（需本机 Chrome/Edge，dev 服务先启动）：
+
+```bash
+node dev/smoke.mjs --url http://127.0.0.1:5173/ --seconds 6   # 输出 JSON；有页面异常/console.error 时退出码 1
+node dev/smoke.mjs --size 390x844                               # 移动端视口
+```
 
 部署时，宿主可在投递 `index.html` 前注入 `__MS_NO3D__`（`0` 或 `1`）：无地形 GLB 时为 `1` 以隐藏 3D 入口。本地 dev server 会做同样替换。
 
@@ -183,3 +200,20 @@ npm run dev   # http://127.0.0.1:5173
 ---
 
 *最后更新：2026-10-07 — 纯前端 Agent 范围。*
+
+## 地形打包与烘焙（`tools/terrain-pack/`）
+
+离线把 `m3d/*.glb` 打成 `.tpk`（MSTP v1：块内 int16 差分 + 首次使用索引变长码 + gzip，约为 GLB 的 1/3～2/5），
+并烘焙逐顶点 `bake`（R = AO，1 = 无遮挡；G = 头顶天空可见度，1 = 头顶是天空）。纯 Node 内置模块（zlib、worker_threads），零依赖。
+
+```bash
+node tools/terrain-pack/cli.mjs --help
+node tools/terrain-pack/cli.mjs daba                    # 单张：打包 + 烘焙 + 回读校验 + 追加 manifest 的 packed 字段
+node tools/terrain-pack/cli.mjs --all                   # 全部地图（daba 约 40s / 32 线程，其余按面数线性估计）
+node tools/terrain-pack/cli.mjs daba --no-bake --no-manifest --out-dir /tmp/tpk   # 只看压缩率
+```
+
+- 产物 `.tpk` 与 GLB 同目录，已被 `.gitignore`（`*.tpk`）忽略；manifest 只追加 `maps.<key>.packed`，不改其它字段。
+- 客户端 `korr-adapter.js` 的 `setMap()`：manifest 有 `packed` 且 `packed.src_rev` 与当前 GLB `rev` 一致时先加载 `.tpk`（`m3d/terrain-packed.js` 解码，原生 `DecompressionStream`），任何失败都回退原 GLB。
+- 交给 `gateway.installGeometry` 的几何多一个 `bake` 属性（Uint8、normalized、itemSize 2）；没有 `bake` 时渲染照旧。
+- 换了 GLB 必须重跑本工具，否则 `src_rev` 不符会自动回退 GLB（不会用到过期包）。

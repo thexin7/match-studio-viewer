@@ -7,3 +7,4 @@ Thumbs.db
 *.glb
 *.glb.gz
 /resources/
+*.tpk

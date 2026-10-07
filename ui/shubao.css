@@ -126,3 +126,39 @@ body.panels-light #dock .color-setting{background:#fff9;border-color:#7f98a832!i
 
 @media(max-width:1100px) and (min-width:901px){:root{--roster-w:258px}}
 @media(max-width:720px){:root{--roster-w:min(268px,calc(100vw - 32px))}#roster{width:var(--roster-w)}#roster-handle{right:calc(var(--roster-w) + 8px)}}
+
+/* 预警与提醒：战况岛告警态（贴脸人数 + 最近敌人方位）、干员台贴脸行、红色提示条。
+   放在主题层末尾，确保覆盖上面对 #island / #isl-dot 的定制。 */
+#island.alert{border-color:#ff2d3f8c;box-shadow:0 0 0 1px #ff2d3f4d,0 4px 18px #ff2d3f40}
+#island.alert #isl-dot{background:var(--alert);color:var(--alert);animation:pulse 1s var(--ease) infinite}
+#isl-near .al{color:var(--alert);font:700 11px Consolas,monospace;margin-right:2px}
+#island.alert #isl-near b:not(.al){color:var(--alert)}
+#isl-near .dir{font-style:normal;margin-left:3px;padding:0 4px;border-radius:4px;background:#ffffff14;color:#ffe0e3}
+#roster .op.alert{border-color:#ff2d3f80;background:#ff2d3f14;box-shadow:inset 2px 0 var(--alert)}
+#toast.alert{background:#3a0a10f0;border-color:#ff2d3f99;color:#ffe3e6;font-weight:650}
+#dock .color-setting.inactive{opacity:.45}
+
+/* 点位图层：撤离点 = 类型色实底方块 + 白色单字（与队伍色的浅色圆点/头像在形状和明度上都分开），
+   容器 = 深底沙色小方块，出生点 = 灰色空心小圆。颜色来自 m3d/poi-data.js，经 --c 注入。 */
+.leaflet-marker-icon.poi{background:none;border:0}
+.poi .poi-ic{display:flex;align-items:center;justify-content:center;box-sizing:border-box;font:700 11px/1 system-ui,"PingFang SC","Microsoft YaHei",sans-serif}
+.poi-exit .poi-ic{width:20px;height:20px;border-radius:5px;background:var(--c);border:1.5px solid #fff;color:#fff;box-shadow:0 0 0 1px #000b,0 0 10px var(--c)}
+.poi-exit .poi-lbl{position:absolute;left:24px;top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none;padding:1px 6px;border-radius:5px;background:#060a10d9;border:1px solid #ffffff24;color:#eef3f6;font:600 11px/1.5 system-ui,"PingFang SC","Microsoft YaHei",sans-serif;text-shadow:0 1px 2px #000}
+#map.poi-nolbl .poi-lbl{display:none}
+.poi-box .poi-ic{width:14px;height:14px;border-radius:3px;background:#0b1118e0;border:1px solid #e6c07a;color:#e6c07a;font-size:8.5px;box-shadow:0 1px 4px #000a}
+.leaflet-marker-icon.poi-spawn{border-radius:50%;border:1.5px solid #b8c4d0;background:#b8c4d02e;box-sizing:border-box;box-shadow:0 0 0 1px #0008}
+.poi-dot{display:inline-block;width:9px;height:9px;border-radius:2px;background:var(--c);flex:none}
+#dock .pick.poi-types{grid-template-columns:repeat(3,minmax(0,1fr))}
+#dock .pick.poi-types button{display:flex;align-items:center;justify-content:center;gap:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:10px;opacity:.55}
+#dock .pick.poi-types button.on{opacity:1}
+#dock .pick.poi-types i{font-style:normal;font-weight:700;color:#e6c07a;font-size:9px}
+#dock .sld.inactive{opacity:.45}
+
+/* 3D 朝向雷达：放在干员台左侧、回放条上方，与左下的小地图对称；
+   移动端在右侧、与小地图同一高度带，避开相机条、回放条与快捷条。 */
+#r3-radar{position:fixed;z-index:6;pointer-events:none;width:168px;height:168px;
+  right:calc(var(--sar) + var(--roster-w) + 32px);bottom:calc(var(--sab) + 124px)}
+body.roster-hidden #r3-radar{right:calc(var(--sar) + 16px)}
+body:not(.mode3d) #s-radar3d{display:none}
+@media(max-width:900px){#r3-radar{width:128px;height:128px;right:calc(var(--sar) + 10px);bottom:calc(var(--sab) + 190px)}}
+@media(max-width:700px){#r3-radar{bottom:calc(var(--sab) + 222px)}}

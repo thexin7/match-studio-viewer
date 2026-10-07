@@ -10,17 +10,23 @@
       ['人物显示',['s-mate','s-ai','s-name','s-wpn','s-gear','s-dist','s-hp','s-foe','s-cone','s-trail','s-roster'],true],
       ['标记样式',['s-dotsize','s-fontsize','s-tagw','s-tagop','s-gunlen']]]},
     {key:'scene',label:'3D 场景',title:'3D 场景',hint:'拖动即生效 · 自动保存',groups:[
-      ['建筑材质',['s-walltrans','s-floortrans']],
+      ['地图与建筑',['mapstyle3dseg','s-maptex3d','s-walltrans','s-followwalltrans','s-floortrans']],
       ['人物模型与朝向',['model3dseg','direction3dseg','directionanchor3dseg','s-charsize']],
-      ['人物颜色',['s-visiblecolor3d','s-occludedcolor3d']],
+      ['人物颜色',['color3dseg','s-visiblecolor3d','s-occludedcolor3d']],
       ['第一视角',['s-fov','s-fpvheight','s-fpvtau']],
-      ['渲染性能',['q3dseg','fpscapseg']]]},
+      ['渲染性能',['q3dseg','shadow3dseg','fpscapseg']]]},
     {key:'loot',label:'物资',title:'物资与容器',hint:'按需显示，减少地图遮挡',groups:[
       ['显示类型',['s-loot','s-box','s-container','s-aibox'],true],
       ['物资品质',['pick-loot']]]},
-    {key:'alerts',label:'预警',title:'距离与预警',hint:'视图顶部可开关屏外预警',groups:[
-      ['接近提醒',['s-alert']],
-      ['屏外预警',['s-warnd','s-warnr','s-warnsz']]]},
+    {key:'alerts',label:'预警',title:'距离与预警',hint:'3D 视图顶部可开关屏外预警、连线与方框',groups:[
+      ['接近提醒',['s-alert','s-alerttoast']],
+      ['屏外预警',['s-warnd','s-warnr','s-warnsz']],
+      ['朝向雷达',['s-radar3dsw','s-radarr']]]},
+    {key:'poi',label:'点位',title:'撤离点与容器',hint:'2D 与 3D 共用 · 2D 放大后显示容器',groups:[
+      ['显示',['s-poiexit','s-poispawn','s-poibox'],true],
+      ['容器类型',['pick-poibox']],
+      ['3D 标注',['s-poiboxd']],
+      ['难度（零号大坝）',['poilevelseg']]]},
   ];
   const shell = document.createElement('div'); shell.className='dock-layout';
   const nav = document.createElement('div');nav.className='dock-tabs';nav.setAttribute('role','tablist');nav.setAttribute('aria-label','设置分类');nav.setAttribute('aria-orientation','vertical');
@@ -45,7 +51,7 @@
       section.append(controls);panel.append(section);
     }
     if(page.key==='scene'){
-      const note=document.createElement('p');note.className='dock-note';note.textContent='透明度 0% 为实心，100% 为全透明。仅改变模型外观。';panel.append(note);
+      const note=document.createElement('p');note.className='dock-note';note.textContent='透明度 0% 为实心，100% 为全透明。「墙体透明度」用于自由/俯视总览，「跟随视角墙体透明度」用于第一/第三跟随；墙较实时，墙后人物以队伍色剪影显示。';panel.append(note);
     }
     content.append(panel);panels.push(panel);
   }

@@ -121,7 +121,24 @@
         60000,
         60000
       ],
-      "terrain_sample_stride_bytes": 4
+      "terrain_sample_stride_bytes": 4,
+      "packed": {
+        "file": "bks.terrain0908.0371649608e61ef4.tpk",
+        "rev": "8aa164879f35b3cf",
+        "src_rev": "0371649608e61ef4",
+        "format": "mstp1",
+        "bytes": 18518217,
+        "raw": 43137451,
+        "tris": 5047134,
+        "verts": 3297180,
+        "chunks": 139,
+        "bake": true,
+        "bake_params": {
+          "rays_per_side": 12,
+          "ao_dist_m": 10,
+          "sky_dist_m": 400
+        }
+      }
     },
     "cgxg": {
       "file": "cgxg.terrain0908.a06b48ce4803f563.glb",
@@ -182,7 +199,24 @@
         112800,
         112800
       ],
-      "terrain_sample_stride_bytes": 4
+      "terrain_sample_stride_bytes": 4,
+      "packed": {
+        "file": "cgxg.terrain0908.a06b48ce4803f563.tpk",
+        "rev": "254c156ae43ca7f8",
+        "src_rev": "a06b48ce4803f563",
+        "format": "mstp1",
+        "bytes": 26424077,
+        "raw": 59240870,
+        "tris": 7381701,
+        "verts": 4348544,
+        "chunks": 488,
+        "bake": true,
+        "bake_params": {
+          "rays_per_side": 12,
+          "ao_dist_m": 10,
+          "sky_dist_m": 400
+        }
+      }
     },
     "cxjy": {
       "file": "cxjy.terrain0908.a21a53fc4bd9e0f8.glb",
@@ -243,7 +277,24 @@
         36596.421875,
         36596.421875
       ],
-      "terrain_sample_stride_bytes": 4
+      "terrain_sample_stride_bytes": 4,
+      "packed": {
+        "file": "cxjy.terrain0908.a21a53fc4bd9e0f8.tpk",
+        "rev": "1c9d54ec4a25fc98",
+        "src_rev": "a21a53fc4bd9e0f8",
+        "format": "mstp1",
+        "bytes": 25094151,
+        "raw": 61502189,
+        "tris": 7158532,
+        "verts": 4718859,
+        "chunks": 132,
+        "bake": true,
+        "bake_params": {
+          "rays_per_side": 12,
+          "ao_dist_m": 10,
+          "sky_dist_m": 400
+        }
+      }
     },
     "daba": {
       "file": "daba.terrain0908.25efaea6a4a25c3c.glb",
@@ -304,7 +355,24 @@
         81086.304688,
         80988.5
       ],
-      "terrain_sample_stride_bytes": 4
+      "terrain_sample_stride_bytes": 4,
+      "packed": {
+        "file": "daba.terrain0908.25efaea6a4a25c3c.tpk",
+        "rev": "e0d354cfff53b15b",
+        "src_rev": "25efaea6a4a25c3c",
+        "format": "mstp1",
+        "bytes": 18890395,
+        "raw": 42673297,
+        "tris": 5293593,
+        "verts": 3219191,
+        "chunks": 226,
+        "bake": true,
+        "bake_params": {
+          "rays_per_side": 12,
+          "ao_dist_m": 10,
+          "sky_dist_m": 400
+        }
+      }
     },
     "htjd": {
       "file": "htjd.terrain0908.db39b5e505b6fe28.glb",
@@ -365,7 +433,24 @@
         65442.871094,
         65442.871094
       ],
-      "terrain_sample_stride_bytes": 4
+      "terrain_sample_stride_bytes": 4,
+      "packed": {
+        "file": "htjd.terrain0908.db39b5e505b6fe28.tpk",
+        "rev": "9e1d1edc93f92215",
+        "src_rev": "db39b5e505b6fe28",
+        "format": "mstp1",
+        "bytes": 13409892,
+        "raw": 32922008,
+        "tris": 3923517,
+        "verts": 2531487,
+        "chunks": 162,
+        "bake": true,
+        "bake_params": {
+          "rays_per_side": 12,
+          "ao_dist_m": 10,
+          "sky_dist_m": 400
+        }
+      }
     }
   },
   "unit": "m",
