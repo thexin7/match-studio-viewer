@@ -1,8 +1,8 @@
 import * as THREE from 'three';
-import {characterKind,aimOf,PosePresenter} from './gateway-pose.js?v=1.1.0';
+import {characterKind,aimOf,viewOf,PosePresenter,CHARACTER_ROOT_ABOVE_MESH_M} from './gateway-pose.js?v=1.4.0';
 import { parseGLB } from './r3d.js?v=1.1.1';
 import { loadTerrainPack } from './terrain-packed.js?v=1.5.0';
-import { gateway } from './korr-renderer.js?v=1.6.0';
+import { gateway } from './korr-renderer.js?v=2.1.0';
 
 // ER snapshots and local GLBs -> Korr renderer, retaining the ER page and controls.
 // Coordinates enter in UE centimetres. GLB uses metres [UE.x, UE.z, UE.y].
@@ -28,20 +28,34 @@ export function interpolateHumans(previous, current, fraction) {
 
 const hpOf = h => {
   if (h && Array.isArray(h.total)) return {hp:h.total[0],maxHp:h.total[1]};
-  return Number.isFinite(h) ? {hp:h,maxHp:100} : {hp:null,maxHp:null};
+  return Number.isFinite(h) ? {hp:h,maxHp:null} : {hp:null,maxHp:null};
 };
 // 回放时 toKorr 每个动画帧都会跑；物资/AI/盒子在两次轮询之间是同一个对象，
 // 按源对象缓存转换结果，避免每帧为几百个物资重新展开对象（GC 抖动）。
 const converted = new WeakMap();
-// 背包名 → 等级（index.html 的 BAG_LV，经 create({bagLv}) 传入），人物模型按等级缩放背包
+// 背包名 → 等级（页面 BAG_LV，经 create({bagLv}) 传入），人物模型按等级缩放背包
 let bagLevels = null;
+// 当前持有武器只认 curr_weapon 的解析结果；weapon 是出生携带，不能冒充当前持有。没有证据时为 null，3D 不放枪。
+export function heldWeapon(e) {
+  const name = typeof e?.curr_weapon === 'string' ? e.curr_weapon.trim() : '';
+  const status = e?.curr_weapon_status;
+  const resolved = status != null ? status === 'resolved' : (e?.curr_weapon_known !== false && !!name);
+  return resolved && name ? name : null;
+}
+export function selfHeldWeapon(s) {
+  const name = typeof s?.self_weapon === 'string' ? s.self_weapon.trim() : '';
+  const status = s?.self_weapon_status;
+  return (status != null ? status === 'resolved' : !!name) && name ? name : null;
+}
+// 已解析但名称表未收录的武器只显示说明文字；原始名称保留给模型判断（不会被当成枪）
+const weaponLabel = w => w && /^武器\s*\d+$/.test(w) ? '武器名称未收录' : w;
 const entity = e => {
   let c = converted.get(e);
   if (!c) {
-    c = {...e, x:e.world[0], y:e.world[1], z:e.world[2],
+    c = {...e, x:e.world[0], y:e.world[1], z:e.world[2]+((characterKind(e)||e.kind==='ai')&&e.position_origin==='mesh'?CHARACTER_ROOT_ABOVE_MESH_M*100:0),
       // Follow targets use stable actor keys, labels retain the real name.
       name:e.key, displayName:e.name === '物资' ? '未知物资 · ID待识别' : e.name || '未命名', ...hpOf(e.hp),
-      alive:!e.dead, quality:e.grade ?? 0, weapon:e.curr_weapon || e.weapon,
+      alive:!e.dead, quality:e.grade ?? 0, weapon:heldWeapon(e), weaponText:weaponLabel(heldWeapon(e)),
       helmetLv:e.helmet, armorLv:e.vest,helmetDur:e.helmet_dur,armorDur:e.vest_dur,hero:e.hero,
       bagLv:(e.bp && bagLevels?.[e.bp]) || 0};
     converted.set(e, c);
@@ -56,10 +70,14 @@ export function toKorr(snapshot, pref={}) {
     ais:valid.filter(e=>e.kind==='ai').map(entity),bosses:[],
     items:valid.filter(e=>(pref.loot!==0 && e.kind==='loot') || (pref.box!==0 && e.kind==='box' && (pref.aibox!==0 || (!e.is_ai && !e.is_bot))) || (pref.container!==0 && e.kind==='container')).map(entity),
     local:snapshot.self ? {key:'__self',name:'__self__',displayName:snapshot.self_name || '自己',
-      x:snapshot.self[0],y:snapshot.self[1],z:snapshot.self[2],...aimOf(snapshot),...hp(snapshot.self_hp),
+      x:snapshot.self[0],y:snapshot.self[1],z:snapshot.self[2]+(snapshot.self_position_origin==='mesh'?CHARACTER_ROOT_ABOVE_MESH_M*100:0),...aimOf(snapshot),...hp(snapshot.self_hp),
       // 自己的队号快照里没有直接给出，取任一队友的队号；复盘他人视角时用于判敌我
       team:(snapshot.entities || []).find(e => e.kind === 'mate' && e.team > 0)?.team || 0,
-      dead:!!snapshot.self_life?.dead} : null,
+      hero:snapshot.self_hero, weapon:selfHeldWeapon(snapshot), weaponText:weaponLabel(selfHeldWeapon(snapshot)),
+      position_origin:snapshot.self_position_origin,
+      view:snapshot.self_view || viewOf(snapshot), pose:snapshot.self_pose,
+      dead:!!snapshot.self_life?.dead, alive:!snapshot.self_life?.dead,
+      status_key:snapshot.self_life?.dead?'dead':snapshot.self_life?.downed?'down':null} : null,
     replay:!!snapshot.replay,slowRevision:Math.floor((snapshot.replay?.position || 0)*5)};
 }
 
@@ -213,14 +231,13 @@ export function create(options) {
     adapter.onCam?.(adapter.camMode,followKey);
   });
   adapter.setPrefs(pref);
-  function animate(){
-    if(active && latest?.replay && !latest.replay.seeking){
-      const sample=presenter.sample(performance.now());
+  adapter.setCam(pref.cam3d || 'chase');
+  gateway.setFrameSource(now=>{
+    if(active && latest && !latest.replay?.seeking){
+      const sample=presenter.sample(now);
       window.AppState.gameData=toKorr(sample,pref);
     }
-    requestAnimationFrame(animate);
-  }
-  requestAnimationFrame(animate);
+  });
   window.gateway3d=adapter;
   return adapter;
 }

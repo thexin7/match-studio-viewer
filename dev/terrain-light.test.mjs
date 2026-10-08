@@ -31,7 +31,7 @@ test('adding a light pack preserves the existing full-pack manifest', () => {
 });
 
 test('auto selects current light terrain, high and stale packs retain full terrain', () => {
-  const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+  const html = fs.readFileSync(new URL('../ui/radar/app.js', import.meta.url), 'utf8');
   const start = html.indexOf('function r3TerrainRecord(');
   assert.ok(start >= 0, 'quality-aware terrain selection exists');
   const ctx = vm.createContext({});

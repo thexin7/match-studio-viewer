@@ -1,0 +1,18 @@
+{
+  "knife": {
+    "file": "tactical-knife.glb",
+    "rev": "f11c01ee730a",
+    "bytes": 615696,
+    "gzipBytes": 122774,
+    "source": "DeltaForce/Content/Models/Weapons/Melees/Knife/Knife_FairbairnSykes_001/Knife_FairbairnSykes_001_1P.uasset",
+    "note": "Default knife viewmodel; weapon skin is not synchronized."
+  },
+  "mp5": {
+    "file": "mp5-standard.glb",
+    "rev": "7744380873b4",
+    "bytes": 413220,
+    "gzipBytes": 142678,
+    "source": "Native MP5 receiver and standard parts, assembled with receiver sockets.",
+    "note": "Default configuration; player attachments are not synchronized."
+  }
+}

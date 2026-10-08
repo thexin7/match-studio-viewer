@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>第一视角视模检查</title>
+<script type="importmap">{"imports":{"three":"/vendor/three/build/three.module.js","three/addons/":"/vendor/three/examples/jsm/"}}</script>
+<style>body{margin:0;background:#202a34;color:white;font:14px sans-serif}canvas{display:block}header{position:absolute;left:20px;top:15px}button{padding:10px;margin:3px}</style></head><body>
+<header><p>测试场景：只验证视模、摆位和显隐，不代表实时状态。</p><button data-weapon="MP5">持枪</button><button data-weapon="战术匕首">持刀</button><button data-weapon="空手">空手</button><span id="state"></span><p id="metrics"></p></header><canvas></canvas>
+<script type="module">
+import * as THREE from 'three';
+import {createFirstPersonWeapon} from '/m3d/first-person-weapon.js';
+const renderer=new THREE.WebGLRenderer({canvas:document.querySelector('canvas'),antialias:true});
+renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;
+const scene=new THREE.Scene();scene.background=new THREE.Color('#303e4b');
+const camera=new THREE.PerspectiveCamera(58,innerWidth/innerHeight,.1,100);scene.add(camera);
+scene.add(new THREE.HemisphereLight(0xffffff,0x43504a,1.7));const light=new THREE.DirectionalLight(0xffffff,2);light.position.set(1,2,3);scene.add(light);
+const view=createFirstPersonWeapon(camera),source={key:'test',x:0,y:0,z:0,weapon:'MP5',alive:true};
+for(const button of document.querySelectorAll('button'))button.onclick=()=>{source.weapon=button.dataset.weapon;document.querySelector('#state').textContent=source.weapon;};
+function resize(){renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();}
+resize();addEventListener('resize',resize);
+let last=0;function frame(now){requestAnimationFrame(frame);if(now-last<1000/60)return;last=now;view.update(source,true,now);renderer.render(scene,camera);document.querySelector('#metrics').textContent=`视模绘制 ${renderer.info.render.calls} 次 · ${renderer.info.render.triangles} 面`;}requestAnimationFrame(frame);
+</script></body></html>

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
-import { loadOperatorAsset, operatorAssetState, createRealisticOperator } from './operator-model.js?v=1.1.0';
-import { operatorDefinition, characterDetail } from './character-detail.js?v=1.1.0';
+import { CHARACTER_ROOT_ABOVE_MESH_M } from './gateway-pose.js?v=1.4.0';
+import { loadOperatorAsset, operatorAssetState, createRealisticOperator } from './operator-model.js?v=1.2.0';
+import { operatorDefinition, characterDetail } from './character-detail.js?v=1.3.0';
 export const MODEL_IDS=['tactical','mannequin','beacon','capsule'];
-const CAPSULE_FOOT_Z=-.9;
+const CAPSULE_FOOT_Z=-CHARACTER_ROOT_ABOVE_MESH_M;
 const GEAR_COLORS=[0x9ca3af,0xe5e7eb,0x67d783,0x5aa3ff,0xb778f2,0xf1b44c,0xf15b64];
 const ANIM_LOD_M=60;
 
@@ -95,8 +96,8 @@ export function syncCharacterModel(entity,style,options={}){
  const id=MODEL_IDS.includes(style)?style:'tactical';
  const base=id==='tactical'?operatorDefinition(options.hero):null;
  const preferred=options.quality==='high'&&base?.desktop?base.desktop:base;
- if(preferred&&operatorAssetState(preferred)==='idle')loadOperatorAsset(preferred);
- if(base&&preferred!==base&&operatorAssetState(preferred)==='error'&&operatorAssetState(base)==='idle')loadOperatorAsset(base);
+ if(options.loadModel!==false&&preferred&&operatorAssetState(preferred)==='idle')loadOperatorAsset(preferred);
+ if(options.loadModel!==false&&base&&preferred!==base&&operatorAssetState(preferred)==='error'&&operatorAssetState(base)==='idle')loadOperatorAsset(base);
  let definition=preferred&&operatorAssetState(preferred)==='ready'?preferred:base;
  if(base&&operatorAssetState(definition)!=='ready'&&entity.operatorSource?.id===base.id)definition=entity.operatorSource;
  const realistic=!!definition&&operatorAssetState(definition)==='ready';
@@ -138,7 +139,7 @@ export function syncCharacterModel(entity,style,options={}){
   mesh.position.set((headingId==='line'?.9:1.1)*scale,0,headingZ);
   mesh.material.color.setHex(pass==='occluded'?occludedColor:visibleColor);
  }
- if(entity.hpBar?.group){entity.hpBar.group.scale.setScalar(scale);entity.hpBar.group.position.x=-.55*scale;}
+ if(entity.hpBar?.group){entity.hpBar.group.scale.setScalar(scale);entity.hpBar.group.position.set(0,0,CAPSULE_FOOT_Z+1.8*scale+.22);}
  for(const model of [entity.customModel,entity.customOccludedModel])if(model){model.root.scale.setScalar(scale);model.root.position.z=CAPSULE_FOOT_Z-model.footZ*scale;model.setGear(helmetLv,armorLv,bagLv,options.gearColors);}
  entity.capsule.material.color.setHex(visibleColor);
  entity.customModel?.setColor(visibleColor);

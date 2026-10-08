@@ -2,13 +2,13 @@
   {
     "id": "88000000030",
     "name": "红狼",
-    "bytes": 528192,
-    "gzipBytes": 209077,
+    "bytes": 826216,
+    "gzipBytes": 366399,
     "triangles": [
       3472,
       727
     ],
-    "sha256": "cc8e5ccee4fec3e936669cfab88adb9769d95cf2695d6c470bcbc07b10466cbd",
+    "sha256": "123957865fdf399daacfa748000984c2aef5bec21283ef1335c0f5a37ba64348",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Kai_HD/M_Kai_SOL_001_HD/M_Kai_SOL_001_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Kai_HD/M_Kai_SOL_001_HD/M_Kai_SOL_001_Hair01_3P_HD.uasset",
@@ -16,25 +16,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1943348,
-      "gzipBytes": 809123,
+      "bytes": 2406712,
+      "gzipBytes": 1105229,
       "triangles": [
         23999,
         4291
       ],
-      "sha256": "a0799b763c0e360cbf2a12180a87e925327b9c4a6a3384d094462893ff08f16b"
+      "sha256": "30e777d97323b5bf06fb9161cf6907178d241c147a5b153e699f5e8088f5335b"
     }
   },
   {
     "id": "88000000028",
     "name": "露娜",
-    "bytes": 497848,
-    "gzipBytes": 209383,
+    "bytes": 803156,
+    "gzipBytes": 366062,
     "triangles": [
       3484,
       746
     ],
-    "sha256": "24c14c3d2d2097dae77529b49cb5248a8c44f6e1aa2694d91c0045f6495582f9",
+    "sha256": "573ef3c16947c14507f2f6ebab1abb8c39ff6700e3858802dc4471ba0b1df38c",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Luna_HD/F_Luna_SOL_013_HD/F_Luna_SOL_013_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Luna_HD/F_Luna_SOL_013_HD/F_Luna_SOL_013_Body_3P_HD.uasset",
@@ -42,49 +42,49 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1841692,
-      "gzipBytes": 779239,
+      "bytes": 2312364,
+      "gzipBytes": 1076891,
       "triangles": [
         23999,
         4306
       ],
-      "sha256": "9887f7afe2448ac6492dddcbedf526cc46f80e3d26d2957fa507294409da3192"
+      "sha256": "c28210a99d69f3ffae4af035ce0546161b21103b358424cc134be0fc0deea20a"
     }
   },
   {
     "id": "88000000029",
     "name": "牧羊人",
-    "bytes": 383976,
-    "gzipBytes": 158133,
+    "bytes": 694856,
+    "gzipBytes": 315501,
     "triangles": [
       3489,
       736
     ],
-    "sha256": "9e482c611e5052cfa0e596b8ba05c3cb420b70d8012fd2ea10092ae84c2b74fa",
+    "sha256": "fef1182ee11ae72323189d2bee7c501f7b0f2081e33a83bc6d8283d79ca77aa6",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Terry_HD/M_Terry_SOL_017_HD/M_Terry_SOL_017_Body_3P_HD.uasset"
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1341616,
-      "gzipBytes": 583175,
+      "bytes": 1817892,
+      "gzipBytes": 880813,
       "triangles": [
         23152,
         4161
       ],
-      "sha256": "8ecfd7388a67377dc3432829185b30cbf5ca5129d14d85a1fde0bc4396f1ae13"
+      "sha256": "80d32fbf2b64af24250862ff2ee4e20b8cdd00c561b16df3d20fbd10130a2ae8"
     }
   },
   {
     "id": "88000000027",
     "name": "蜂医",
-    "bytes": 502948,
-    "gzipBytes": 196982,
+    "bytes": 800828,
+    "gzipBytes": 353445,
     "triangles": [
       3481,
       747
     ],
-    "sha256": "fa9a376496fd21d03aaadff848c7c74b845b893968f9bb94d6fe53d04cd08239",
+    "sha256": "a923ca2ed293e9a90747f6611e69f20ce04af539753befb5cd5eb56a50af97e5",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Roy_HD/M_Roy_SOL_015_HD/M_Roy_SOL_015_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Roy_HD/M_Roy_SOL_015_HD/M_Roy_SOL_015_Hair01_3P_HD.uasset",
@@ -92,49 +92,49 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 2058388,
-      "gzipBytes": 802696,
+      "bytes": 2521608,
+      "gzipBytes": 1099942,
       "triangles": [
         23999,
         4303
       ],
-      "sha256": "23c101e41dee16de1a25e60930ec7061cd86c45829f9b99a3d0eb32e43c815bb"
+      "sha256": "d1de0c2db458246f64e29e31878e33dd990099d64d93ffc3a7e17a5338bd9851"
     }
   },
   {
     "id": "88000000025",
     "name": "威龙",
-    "bytes": 386752,
-    "gzipBytes": 163324,
+    "bytes": 684632,
+    "gzipBytes": 321164,
     "triangles": [
       3456,
       1008
     ],
-    "sha256": "eb2640fc1b05e96f64194a70ec418d6bb95eeee6105961ad6ed22dc55465b5e7",
+    "sha256": "5fd2803dc2b6c791dfbfc19d09476f787e4ebe287be05f1488033f490653748e",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Dragon_HD/M_Dragon_008_HD/M_Dragon_008_Body_3P_HD.uasset"
     ],
     "variant": "Helmeted original game model requested for recognizable silhouette",
     "desktop": {
-      "bytes": 1386440,
-      "gzipBytes": 617063,
+      "bytes": 1849660,
+      "gzipBytes": 913879,
       "triangles": [
         23999,
         4285
       ],
-      "sha256": "a6f77c0fccebee1f6ee1df908b3eb0ad14a678fc5d621732bee4f5e66f211aab"
+      "sha256": "44c10f3a8d1cca66f469cdc9dd9709e892b232d4a6f7296943d4cca6c0be45a9"
     }
   },
   {
     "id": "88000000026",
     "name": "骇爪",
-    "bytes": 466524,
-    "gzipBytes": 185020,
+    "bytes": 768372,
+    "gzipBytes": 341756,
     "triangles": [
       3495,
       759
     ],
-    "sha256": "8dea6c4ef3e0f2b7e2e5c141d6bbf49d40cf3e1ac0da56bf6cb65b7e99d21525",
+    "sha256": "0fe2be68a4db72bb77c8b592c4104f63e1b27ea9b12bcaba5312038e5ce34854",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Hack_HD/F_Hack_SOL_010_HD/F_Hack_SOL_010_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Hack_HD/F_Hack_SOL_010_HD/F_Hack_SOL_010_Body_3P_HD.uasset",
@@ -142,50 +142,50 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1670256,
-      "gzipBytes": 716221,
+      "bytes": 2137460,
+      "gzipBytes": 1012103,
       "triangles": [
         24000,
         4314
       ],
-      "sha256": "7c1011c61da7e6a77f6b2ff81b975abf3cdb308cdd4b0087855d8547afb91d02"
+      "sha256": "414cbcac90ed79933d18d91ee47606824084489e612f528cc0c7eadf07385aa4"
     }
   },
   {
     "id": "88000000035",
     "name": "乌鲁鲁",
-    "bytes": 468204,
-    "gzipBytes": 192728,
+    "bytes": 766228,
+    "gzipBytes": 350252,
     "triangles": [
       3492,
       750
     ],
-    "sha256": "623353e200a814f644e780d65317b62296f86cba278ee2c8699adebd32d546fd",
+    "sha256": "5411446a66dc059d853317944bb88c39a1f6fd347dd4673f083c4445f8826937",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_David_HD/M_David_SOL_026_HD/M_David_SOL_026_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_David_HD/M_David_SOL_026_HD/M_David_SOL_026_Body_3P_HD.uasset"
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1711408,
-      "gzipBytes": 731437,
+      "bytes": 2174772,
+      "gzipBytes": 1026141,
       "triangles": [
         23999,
         4310
       ],
-      "sha256": "f2f2b8a6f3b25d57f0b0863dbe316556984eab8c23d52df9623723ae03213181"
+      "sha256": "3ebec88e42f4f0f17fb584d7d2fde85025c866e1460c66d1f4fb8eaf4d453e0b"
     }
   },
   {
     "id": "88000000036",
     "name": "蛊",
-    "bytes": 472712,
-    "gzipBytes": 186991,
+    "bytes": 774704,
+    "gzipBytes": 343652,
     "triangles": [
       3490,
       758
     ],
-    "sha256": "8ec5b31839486ac7e90b133c6cc8709c6bc129ceb4ed1cb67b088b101a247b91",
+    "sha256": "636da2f741aa9befd7208e3f762604a4fadd912c289b22bb59c31ab22e3c7a13",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Zoya_HD/F_Zoya_SOL_024_HD/F_Zoya_SOL_024_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Zoya_HD/F_Zoya_SOL_024_HD/F_Zoya_SOL_024_Hair_3P_HD.uasset",
@@ -193,49 +193,49 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1738276,
-      "gzipBytes": 727068,
+      "bytes": 2205624,
+      "gzipBytes": 1023583,
       "triangles": [
         23998,
         4310
       ],
-      "sha256": "e1fa2eaaaf1c2c6635dac9f31b59f9ee915c90bc9af4bcdf1f7079928f5713d8"
+      "sha256": "7961d79e8329f8811b86b49d629c4380538cb04a18a50673483ccb92747c23e0"
     }
   },
   {
     "id": "88000000037",
     "name": "深蓝",
-    "bytes": 365472,
-    "gzipBytes": 152236,
+    "bytes": 663352,
+    "gzipBytes": 308536,
     "triangles": [
       3497,
       750
     ],
-    "sha256": "db10e99d9cfe378d4399a313f84299595bb711a3125cef9ef6a24dce3d990258",
+    "sha256": "8402fb2b27b29e87027af75fd481da67418c48038349041e6d7eca4df3dae830",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Sineva_HD/M_Sineva_SOL_033_HD/M_Sineva_SOL_033_Body_3P_HD.uasset"
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1124084,
-      "gzipBytes": 473221,
+      "bytes": 1587288,
+      "gzipBytes": 771464,
       "triangles": [
         18877,
         3395
       ],
-      "sha256": "1bf099d29ba2a988f0a340961b6831c58db2a0fe942a89e8ba7c1548b1d845dd"
+      "sha256": "6d44bb6be743502735f3ea22f56b93385f3a4f4d133ee1c33247a0e8d19f9fa3"
     }
   },
   {
     "id": "88000000038",
     "name": "无名",
-    "bytes": 476308,
-    "gzipBytes": 191871,
+    "bytes": 774332,
+    "gzipBytes": 349072,
     "triangles": [
       3487,
       750
     ],
-    "sha256": "9400891cfbf951dad103c9692d4cce29dcb8e2b85d8335582091997ec55fbea7",
+    "sha256": "9d6a35793047e442512d4b8dfd14165fde5f4be01b2af2a2648e0d11faf89a7c",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Elio_HD/M_Elio_SOL_035_HD/M_Elio_SOL_035_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Elio_HD/M_Elio_SOL_035_HD/M_Elio_SOL_035_Hair_3P_HD.uasset",
@@ -243,25 +243,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1879620,
-      "gzipBytes": 790686,
+      "bytes": 2342984,
+      "gzipBytes": 1088574,
       "triangles": [
         24000,
         4305
       ],
-      "sha256": "44d6602acfaf3a002b2d324935e4626d64c259f455591bf4e85c27f3a227446a"
+      "sha256": "8695857ba8fdafd6f58d5ebca626b87d72fa30b6773c9b509fd611dc66ea3dbc"
     }
   },
   {
     "id": "88000000039",
     "name": "疾风",
-    "bytes": 437892,
-    "gzipBytes": 206763,
+    "bytes": 742696,
+    "gzipBytes": 363248,
     "triangles": [
       3456,
       1250
     ],
-    "sha256": "f5b99385d2f968d9bdd816ee054a0ba89b0e97723f8f3aeb3dba5594935f4b23",
+    "sha256": "15b2e43fe7448c940adaf05f60a6a7e75e01dfb55fa874ff93ee0b60b837abb2",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Claire_HD/F_Claire_SOL_063_HD/F_Claire_SOL_063_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_Claire_HD/F_Claire_SOL_063_HD/F_Claire_SOL_063_Hair01_3P_HD.uasset",
@@ -269,25 +269,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1815052,
-      "gzipBytes": 837021,
+      "bytes": 2285216,
+      "gzipBytes": 1133475,
       "triangles": [
         24000,
         4276
       ],
-      "sha256": "69b82f065d175b1a7bbd01ce2155bc1300c0c7888360ca9c93e5715fe985f7fc"
+      "sha256": "12fe85a3141f39dfbd431310025e4dee81581e592e495fc78d7feb2ecf1e249a"
     }
   },
   {
     "id": "88000000040",
     "name": "银翼",
-    "bytes": 444308,
-    "gzipBytes": 197594,
+    "bytes": 742332,
+    "gzipBytes": 354885,
     "triangles": [
       3465,
       731
     ],
-    "sha256": "287c093a65b7c3d0a3e0d2f22105c968a2bee90dff962b32ad28c893255c1909",
+    "sha256": "82d72784774b5d610e9980832c28ecbfa25872eec3e73277cd14aee3147b9c22",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Landon_20_HD/M_Landon_20_SOL_HD/M_Landon_20_SOL_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Landon_20_HD/M_Landon_20_SOL_HD/M_Landon_20_SOL_Hair_3P_HD.uasset",
@@ -295,25 +295,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1632988,
-      "gzipBytes": 713321,
+      "bytes": 2096356,
+      "gzipBytes": 1009337,
       "triangles": [
         23999,
         4287
       ],
-      "sha256": "09ad8e7a3b37b0b05066cd14bc596b99564d5e98f0e524eca38ccabae3ce107d"
+      "sha256": "1c435e3da26ed6e0a9a0212ea6f8576c882a1c8d9f27a6cf7ffd175a427e62b3"
     }
   },
   {
     "id": "88000000041",
     "name": "比特",
-    "bytes": 512560,
-    "gzipBytes": 201102,
+    "bytes": 810584,
+    "gzipBytes": 357359,
     "triangles": [
       3452,
       715
     ],
-    "sha256": "17d3824e3d3d8ba59687ec436ed10651a1fa59f127bd7fb06284f9448d5f053d",
+    "sha256": "f03c9144eadaae175029e8b3813743bed8dd96b971c819dc03cf7a6fbac92909",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Rashid_v5_HD/M_Rashid_v5_SOL_HD/M_Rashid_v5_SOL_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_Rashid_v5_HD/M_Rashid_v5_SOL_HD/M_Rashid_v5_SOL_Hair_3P_HD.uasset",
@@ -321,25 +321,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 2204040,
-      "gzipBytes": 863304,
+      "bytes": 2667408,
+      "gzipBytes": 1158997,
       "triangles": [
         24000,
         4272
       ],
-      "sha256": "12682e27cb556461f0950b7d4842301397dc49b794ae3164789fd7468ff51c59"
+      "sha256": "ebce62bd7a757d2725aa3af4e91509476eabd310fa3ae31545ec8727ce995a66"
     }
   },
   {
     "id": "88000000045",
     "name": "蝶",
-    "bytes": 509072,
-    "gzipBytes": 222159,
+    "bytes": 811064,
+    "gzipBytes": 378783,
     "triangles": [
       3455,
       1241
     ],
-    "sha256": "6cf709b10887cc6b82e1eadc909091a6aea265afb305da22340350e2c3be2d8d",
+    "sha256": "dd0c64ac8532dd4f0a982425cbe05ae180d59509a425ba50f10aed6f40ce5b8f",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_C103_HD/F_C103_SOL_HD/F_C103_SOL_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/F_C103_HD/F_C103_SOL_HD/F_C103_SOL_Hair_3P_HD.uasset",
@@ -347,25 +347,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1985496,
-      "gzipBytes": 891656,
+      "bytes": 2452844,
+      "gzipBytes": 1188108,
       "triangles": [
         23994,
         4270
       ],
-      "sha256": "57121469011993bb9642642283d4360050159fbcfcc5b8f33d18ba64b4058b14"
+      "sha256": "45a8b22f71d0cb2c3c1a132d4c70b0f7a1e8d5af8cec7792ca6f5c1177ffda1f"
     }
   },
   {
     "id": "88000000046",
     "name": "回响",
-    "bytes": 464636,
-    "gzipBytes": 193342,
+    "bytes": 762660,
+    "gzipBytes": 349628,
     "triangles": [
       3453,
       713
     ],
-    "sha256": "f0eabf6cba1817062cd6d428fa151cb3542254d866480978792e0ee8dfd87662",
+    "sha256": "19e2a64c371bb520a7233ab5030da394fefbbcb80b241c728287bf4eee2ab636",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_C204_HD/M_C204_SOL_HD/M_C204_SOL_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_C204_HD/M_C204_SOL_HD/M_C204_SOL_Hair_3P_HD.uasset",
@@ -373,25 +373,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1952292,
-      "gzipBytes": 822901,
+      "bytes": 2415660,
+      "gzipBytes": 1117764,
       "triangles": [
         24000,
         4273
       ],
-      "sha256": "3aece1c4640e9fb7ea9df1e068a8e6286312b978d869eb294b55a3869d075e9e"
+      "sha256": "c1c90cb3f4dadde9594f9974bac541d8793bd98693b1cd6c3f3272de856cde35"
     }
   },
   {
     "id": "88000000047",
     "name": "液氮",
-    "bytes": 496304,
-    "gzipBytes": 213162,
+    "bytes": 794184,
+    "gzipBytes": 369324,
     "triangles": [
       3476,
       738
     ],
-    "sha256": "471d26c70f53e760685e50603cbe6864ae903678d2257db68193cba93ecb78ad",
+    "sha256": "d88fbddd3108fe6066c30c88204bbac774f53eb66775dbebd7f7f0b067a67724",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_C405_HD/M_C405_SOL_HD/M_C405_SOL_Hair_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_C405_HD/M_C405_SOL_HD/M_C405_SOL_Hair01_3P_HD.uasset",
@@ -399,25 +399,25 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1935464,
-      "gzipBytes": 821945,
+      "bytes": 2398684,
+      "gzipBytes": 1119987,
       "triangles": [
         24000,
         4293
       ],
-      "sha256": "9ff85aa59ef955a1f474cc669c3f8b5e6db540bf54e376f001fa7d4ee0a9df1a"
+      "sha256": "cb7acec24b120d821313943cfe8fcd6611db151014d4de5540f3197e4c170654"
     }
   },
   {
     "id": "88000000051",
     "name": "旅人",
-    "bytes": 490800,
-    "gzipBytes": 203555,
+    "bytes": 798844,
+    "gzipBytes": 361225,
     "triangles": [
       3460,
       1286
     ],
-    "sha256": "25d587df8d5f85434efac340c84efcc90524891f3108cb8251e7faef90964a65",
+    "sha256": "b6efa58141a5063f857f19938fd079a0ad97f676620bbf0ae9e1fb53fff04503",
     "source": [
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_C104_HD/M_C104_SOL_HD/M_C104_SOL_Body_3P_HD.uasset",
       "DeltaForce/Content/Models/Characters_HD/Hero_HD/M_C104_HD/M_C104_SOL_HD/M_C104_SOL_Hair_3P_HD.uasset",
@@ -425,13 +425,37 @@
     ],
     "variant": "TPP default",
     "desktop": {
-      "bytes": 1921836,
-      "gzipBytes": 823207,
+      "bytes": 2395268,
+      "gzipBytes": 1119981,
       "triangles": [
         24000,
         4280
       ],
-      "sha256": "b0546d95d50a3939bb8b1e59cfc34a30633238e01fc9e8f4e7036bfdef02e7d3"
+      "sha256": "d4bd07762922c9d7d6d8c7312fee95ecdc1ef88c855e7b422050cea97d47c09b"
+    }
+  },
+  {
+    "id": "ai-soldier",
+    "name": "AI通用步兵",
+    "bytes": 590880,
+    "gzipBytes": 278907,
+    "triangles": [
+      3499,
+      766
+    ],
+    "sha256": "e3eae65b051045776471d1f05362fe418e43a9b52a0457c1d33cd423fd3420ad",
+    "source": [
+      "DeltaForce/Content/Models/Characters/AI/GeneralBody/HS_Security_06_3P.uasset"
+    ],
+    "variant": "TPP default",
+    "desktop": {
+      "bytes": 1078884,
+      "gzipBytes": 568187,
+      "triangles": [
+        11215,
+        2017
+      ],
+      "sha256": "ade185deb274e336507c0cae6872fab7d09968e32cce74f8ccf21de1f98420e7"
     }
   }
 ]

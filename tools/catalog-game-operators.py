@@ -7,6 +7,7 @@ import hashlib
 import json
 import struct
 import sys
+import subprocess
 from pathlib import Path
 
 root=Path(__file__).resolve().parents[1]
@@ -34,4 +35,5 @@ for op in selection:
         report[-1]['desktop']={'bytes':len(desktop_raw),'gzipBytes':len(desktop_packed),'triangles':desktop_triangles,'sha256':desktop_hash}
 (root/'m3d/operator-catalog.js').write_text('// Generated from local game assets; do not hand-edit.\nexport const OPERATOR_MODELS = Object.freeze('+json.dumps(catalog,ensure_ascii=False,indent=2)+');\n',encoding='utf-8')
 (root/'ui/models/operator/mobile-manifest.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+subprocess.run(['node', str(root/'tools/catalog-camera-offsets.mjs')], check=True)
 print(json.dumps({'operators':len(report),'rawBytes':sum(x['bytes'] for x in report),'transferBytes':sum(x['gzipBytes'] for x in report),'maxTransferBytes':max(x['gzipBytes'] for x in report),'desktopTransferBytes':sum(x.get('desktop',{}).get('gzipBytes',0) for x in report)}))

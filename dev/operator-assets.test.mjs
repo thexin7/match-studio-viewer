@@ -10,8 +10,8 @@ for (const [hero, asset] of Object.entries(OPERATOR_MODELS)) {
   test(`${hero}: phone asset budget, self-contained data and lossless transport`, { skip: !fs.existsSync(file) && 'Optional local game assets are not installed' }, () => {
     const bytes = fs.readFileSync(file);
     const packed = fs.readFileSync(new URL(file.href + '.gz'));
-    assert.ok(bytes.length < 700_000, 'Raw model must stay under 700 KB');
-    assert.ok(packed.length < 300_000, 'Transfer must stay under 300 KB');
+    assert.ok(bytes.length < 900_000, 'Raw model including full locomotion must stay under 900 KB');
+    assert.ok(packed.length < 400_000, 'Transfer must stay under 400 KB');
     assert.deepEqual(gunzipSync(packed), bytes);
     assert.ok(asset.src.endsWith(createHash('sha256').update(bytes).digest('hex').slice(0, 12)));
     const model = JSON.parse(bytes.subarray(20, 20 + bytes.readUInt32LE(12)).toString());
@@ -26,8 +26,12 @@ for (const [hero, asset] of Object.entries(OPERATOR_MODELS)) {
     // Three long-hair silhouettes stop simplifying at about 1250 triangles;
     // keep their characteristic outline within the same mobile draw-call budget.
     assert.ok(Math.min(...triangles) <= 1300);
-    for (const name of ['TPose', 'Idle', 'Walk', 'Run', 'Death', 'Crouch']) {
+    for (const name of ['TPose', 'Idle', 'Walk', 'Run', 'Death', 'Crouch', 'Downed', 'Prone', 'Swim', 'SwimIdle', 'Fall']) {
       assert.ok(model.animations.some(clip => clip.name === name), name);
+    }
+    for (const name of ['Walk','Run','Sprint','Swim','SwimIdle','Death']) {
+      const clip=model.animations.find(clip=>clip.name===name);
+      assert.ok(clip?.samplers.some(s=>model.accessors[s.input].count>1),name+' must not be collapsed to one pose');
     }
   });
 }

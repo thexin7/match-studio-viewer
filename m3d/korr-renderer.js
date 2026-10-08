@@ -19,12 +19,15 @@
 */
 
 import * as THREE from 'three';
-import { isEnemyOfViewer as _isEnemyOfViewer } from './character-detail.js?v=1.1.0';
-import {syncCharacterModel,animateCharacterModel} from './character-models.js?v=1.6.0';
-import {aimDirection,splitSurfaceIndices} from './gateway-pose.js?v=1.1.0';
+import { isEnemyOfViewer as _isEnemyOfViewer, operatorDefinition as _operatorDefinition } from './character-detail.js?v=1.3.0';
+import { operatorState } from './operator-motion.js?v=1.1.0';
+import {syncCharacterModel,animateCharacterModel} from './character-models.js?v=1.8.1';
+import { createFirstPersonWeapon } from './first-person-weapon.js?v=1.2.0';
+import {aimDirection,splitSurfaceIndices,CHARACTER_ROOT_ABOVE_MESH_M} from './gateway-pose.js?v=1.4.0';
 import { buildMapChunksAsync } from './map-chunks.js?v=1.4.0';
+import { buildRayGrid, raycastRayGrid, clipSegmentToBox } from './map-raycast.js?v=1.0.0';
 import { buildMapTexture } from './map-texture.js?v=1.4.0';
-import { createHud } from './korr-hud.js?v=1.5.0';
+import { createHud } from './korr-hud.js?v=2.0.2';
 import { createPoiLayer } from './poi-3d.js?v=1.4.0';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
@@ -126,6 +129,7 @@ let environmentTexture = null;
 let environmentRenderTarget = null;
 let activeQualityProfile = null;
 let requestedRenderQuality = 'auto';
+let firstPersonWeapon = null;
 let autoQualityCeiling = null;
 /* 墙体透明度按镜头模式取值：总览（自由/俯视）用 walltrans，方便看穿建筑找人；
    跟随视角（第一/第三跟随）用 followwalltrans（默认实心），观感接近游戏本身。
@@ -178,7 +182,7 @@ const POOL = {
     ais:     [],
     items:   [],
 };
-const POOL_SIZE = { players: 64, bosses: 8, ais: 128, items: 512 };
+const POOL_SIZE = { players: 0, bosses: 8, ais: 0, items: 0 };
 const CARD_ICONS = {};
 if (typeof Image !== 'undefined') {
     for (const [key, url] of Object.entries({helmet:'/ui/icons/helmet.png?v=1.1.0', armor:'/ui/icons/armor.png?v=1.1.0'})) {
@@ -277,10 +281,14 @@ function _readStoredIndoorClarity() {
 }
 indoorClarityEnabled = _readStoredIndoorClarity();
 
+/* 每帧、每个人物都会问一次；matchMedia 与 userAgentData 不便宜，缓存到窗口尺寸变化（resize 清空）。 */
+let mobileGpuProfile = null;
 function _isMobileGpuProfile() {
+    if (mobileGpuProfile !== null) return mobileGpuProfile;
     const coarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches === true;
     const narrowScreen = window.matchMedia?.('(max-width: 768px)')?.matches === true;
-    return navigator.userAgentData?.mobile === true || (coarsePointer && narrowScreen);
+    mobileGpuProfile = navigator.userAgentData?.mobile === true || (coarsePointer && narrowScreen);
+    return mobileGpuProfile;
 }
 
 function _resolveAutoRenderQuality() {
@@ -801,6 +809,8 @@ function init() {
     camera = new THREE.PerspectiveCamera(75, 1, 0.2, 50000);
     camera.position.set(1000, 1000, 1000);
     camera.up.set(0, 0, 1);   // UE 世界 Z 是 up
+    scene.add(camera);
+    firstPersonWeapon = createFirstPersonWeapon(camera);
 
     controls = new OrbitControls(camera, canvas);
     freeOrbitMinDistance = controls.minDistance;
@@ -889,12 +899,14 @@ function init() {
         qualityMonitor.warmupUntil = performance.now() + 1500;
         // 切回 3D 时刷新 canvas 尺寸
         if (e.detail === '3d') requestAnimationFrame(resize);
+        _scheduleLoop();
     });
     document.addEventListener('visibilitychange', () => {
         qualityMonitor.frames = 0;
         qualityMonitor.sampleStartedAt = 0;
         qualityMonitor.lastFrameAt = 0;
         qualityMonitor.warmupUntil = performance.now() + 1500;
+        _scheduleLoop();
     });
 
     // 键盘: F = fit-to-players, A = fit-to-all (地图+玩家), Esc = 取消跟随
@@ -924,7 +936,7 @@ function init() {
     _dispatchIndoorClarityChanged();
 
     // 启动渲染循环
-    renderer.setAnimationLoop(tick);
+    _scheduleLoop();
 }
 
 // ============================================================================
@@ -962,7 +974,7 @@ function buildPlayerEntity() {
        v700x: UE 传来的 z 是玩家 RootComponent 位置 = 胶囊 *中心* (脚底上方 ~0.9m),
               所以 mesh 本地 z 保持 0 让几何中心对齐 group.origin.
               以前 mesh.z=0.9 把整个人抬高了半个身位 → 头顶穿模. */
-    const capsuleGeo = new THREE.CapsuleGeometry(0.4, 1.0, 6, 12);
+    const capsuleGeo = new THREE.CapsuleGeometry(0.4, CHARACTER_ROOT_ABOVE_MESH_M*2-.8, 6, 12);
 
     const capsuleMat = new THREE.MeshBasicMaterial({
         color: 0xffffff, depthTest: true, transparent: false,
@@ -1181,7 +1193,7 @@ function buildPools() {
         POOL.bosses.push(e);
     }
     for (let i = 0; i < POOL_SIZE.ais; ++i) {
-        const e = buildAIEntity();
+        const e = buildPlayerEntity();
         e.root.visible = false;
         e.root.userData = { kind: 'ai', poolIdx: i };
         scene.add(e.root);
@@ -1195,46 +1207,31 @@ function buildPools() {
     }
 }
 
-// ============================================================================
-//  v700x3: 血条 + 信息卡 分离
-//    A) HpBar (Group): 世界空间竖立血条, 贴在胶囊左侧, 长度=胶囊全高.
-//       - 底 (灰) + 填充 (绿/黄/红), 高度按 hpRatio 从下往上填
-//       - 不加 scale 修正, 跟胶囊一起随距离缩 (远了自然细/短)
-//       - 用 depthTest:false + renderOrder 高, 保证不被墙挡
-//    B) InfoCard (Sprite): 名字 / 干员 / 护甲 / 武器 (不含血条).
-//       - Canvas 尺寸不再随 detail 变, 恒定 320x100
-//       - scaleSprite 保持屏幕像素稳定 (远了不变小)
-//    远距离 (detail 0) 只显示血条 mesh, sprite 不可见.
-// ============================================================================
-
-const HPBAR_W_M = 0.10;   // 世界空间血条宽度 10 cm
-const HPBAR_H_M = 1.8;    // 高度对齐胶囊 1.8m (含端半球)
+// 近景使用头顶横向血条；远景由屏幕 HUD 保持可读的血量数值和血条。
+const HPBAR_W_M = 0.7;
+const HPBAR_H_M = 0.055;
 
 function makeHpBar() {
     const group = new THREE.Group();
     /* 底槽 (深灰) */
     const bgGeo = new THREE.PlaneGeometry(HPBAR_W_M, HPBAR_H_M);
     const bgMat = new THREE.MeshBasicMaterial({
-        color: 0x0a0e17, depthTest: false, transparent: true, opacity: 0.85,
+        color: 0x0a0e17, depthTest: false, depthWrite: false, transparent: true, opacity: 0.85,
     });
     const bg = new THREE.Mesh(bgGeo, bgMat);
     bg.renderOrder = 998;
     group.add(bg);
-    /* 填充 (颜色随血量变). 用 scale.y 从下往上填, 得先把 pivot 挪到底部 */
-    const fillGeo = new THREE.PlaneGeometry(HPBAR_W_M * 0.75, HPBAR_H_M);
-    fillGeo.translate(0, HPBAR_H_M / 2, 0);   // pivot 移到底端
+    /* 底槽和填充处于同一透明队列，避免底槽在填充之后覆盖血量。 */
+    const fillGeo = new THREE.PlaneGeometry(HPBAR_W_M, HPBAR_H_M * 0.7);
+    fillGeo.translate(HPBAR_W_M / 2, 0, 0);
     const fillMat = new THREE.MeshBasicMaterial({
-        color: 0x22c55e, depthTest: false,
+        color: 0x22c55e, depthTest: false, depthWrite: false, transparent: true,
     });
     const fill = new THREE.Mesh(fillGeo, fillMat);
-    fill.position.y = -HPBAR_H_M / 2;         // group 中心对齐胶囊中心
+    fill.position.x = -HPBAR_W_M / 2;
     fill.renderOrder = 999;
     group.add(fill);
-    /* 群组位置: 贴胶囊左侧. 胶囊半径 0.4, 血条中心 x=-0.55 */
-    group.position.x = -0.55;
-    /* 让血条永远面向相机 (billboard) — 用 rotation.z=0, 靠 tick 里 lookAt 更新? 简化:
-       胶囊已经跟 root 一起 rotation.z (yaw), 血条要抵消 yaw 保持面向东?
-       更好: 让血条不继承 root.rotation. 独立挂在 scene, tick 每帧同步 root.position. */
+    group.position.z = 1.12;
     return { group, bg, fill };
 }
 
@@ -1242,7 +1239,7 @@ function makeHpBar() {
 function updateHpBar(hpBar, ratio) {
     if (!hpBar || !hpBar.group) return;
     const r = Math.max(0, Math.min(1, ratio));
-    hpBar.fill.scale.y = Math.max(0.001, r);
+    hpBar.fill.scale.x = Math.max(0.001, r);
     const col = r > 0.5 ? 0x22c55e : r > 0.25 ? 0xfacc15 : 0xef4444;
     hpBar.fill.material.color.setHex(col);
     hpBar.group.visible = true;
@@ -1393,9 +1390,15 @@ function _viewerRange(p, tx, ty, tz) {
 // ============================================================================
 //  帧更新
 // ============================================================================
+function _operatorRenderQuality() {
+    if (requestedRenderQuality === 'performance' || requestedRenderQuality === 'auto' && _isMobileGpuProfile()) return 'performance';
+    return 'high';
+}
+
 function updatePlayers(players) {
     while (POOL.players.length < (players?.length || 0)) {
-        const entity = buildPlayerEntity(); entity.root.visible = false; scene.add(entity.root); POOL.players.push(entity);
+        const entity = buildPlayerEntity(); entity.root.userData.poolIdx = POOL.players.length;
+        entity.root.visible = false; scene.add(entity.root); POOL.players.push(entity);
     }
     POOL_SIZE.players = POOL.players.length;
     const disp = window.AppState?.display || {};
@@ -1429,11 +1432,12 @@ function updatePlayers(players) {
             const color = p.kind === 'unknown' ? PALETTE.unknown : isTeammate ? PALETTE.mate : PALETTE.teams[0];
             const dead = p.alive === false;
             const look = _modelColors(color, !isTeammate, dead, disp);
-            syncCharacterModel(e,disp.model3d,{hero:p.hero,quality:_resolvedRenderQualityId(),scale,visibleColor:look.visible,occludedColor:look.occluded,
-                occludedOpacity:look.opacity,showHeading:disp.showCone !== false && Number.isFinite(p.yaw),
+            syncCharacterModel(e,disp.model3d,{hero:p.hero,quality:_operatorRenderQuality(),scale,visibleColor:look.visible,occludedColor:look.occluded,
+                loadModel:camera.position.distanceTo(e.root.position)<160,
+                occludedOpacity:look.opacity,showHeading:disp.showCone !== false && e.characterDetail === 2 && Number.isFinite(p.yaw),
                 directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d,
                 helmetLv:p.helmetLv,armorLv:p.armorLv,bagLv:p.bagLv,gearColors:EQUIP_COLORS});
-            animateCharacterModel(e,p,camera,performance.now(),renderer.domElement.clientHeight||900,_resolvedRenderQualityId());
+            animateCharacterModel(e,p,camera,performance.now(),renderer.domElement.clientHeight||900,_operatorRenderQuality());
             // 头顶信息卡 (名字 + 武器 + 血量 + 护甲)
             const nameParts = [];
             const lastKnown = (p._out_of_range || p.out_of_range) && !dead && !p.spawn_mark;
@@ -1446,11 +1450,12 @@ function updatePlayers(players) {
                 dim: dead || lastKnown,
                 plate: disp.tagOpacity,
             };
-            if (disp.showHealth !== false && p.maxHp > 0 && p.hp != null) {
-                info.hpRatio = p.hp / p.maxHp;
-                info.hpText = `${Math.round(p.hp)} / ${Math.round(p.maxHp)}`;
+            // 上限未知时仍显示已知数值（不画比例），血量未知与 0 血分开写
+            if (disp.showHealth !== false) {
+                if (p.maxHp > 0 && Number.isFinite(p.hp)) info.hpRatio = p.hp / p.maxHp;
+                info.hpText = Number.isFinite(p.hp) ? `${Math.round(p.hp)} / ${p.maxHp > 0 ? Math.round(p.maxHp) : '?'}` : '血量未知';
             }
-            if (disp.showWeapon !== false && p.weapon) info.weapon = p.weapon;
+            if (disp.showWeapon !== false && p.weapon) info.weapon = p.weaponText || p.weapon;
             if (disp.showArmor !== false) {
                 if (p.armorLv > 0) { info.armorLv = p.armorLv; info.armorDur = p.armorDur; }
                 if (p.helmetLv > 0) { info.helmetLv = p.helmetLv; info.helmetDur = p.helmetDur; }
@@ -1464,7 +1469,7 @@ function updatePlayers(players) {
                 if (info.hpRatio != null) updateHpBar(e.hpBar, info.hpRatio);
                 else e.hpBar.group.visible = false;
             }
-            e.src = p; e.identityColor = color; e.modelScale = scale;
+            e.src = p; e.identityColor = color; e.modelScale = scale;e.poseHeightDelta=_poseHeightDelta(p);
         }
     }
     for (let i = n; i < POOL_SIZE.players; ++i) POOL.players[i].root.visible = false;
@@ -1518,7 +1523,8 @@ function updateBosses(bosses) {
 
 function updateAIs(ais) {
     while (POOL.ais.length < (ais?.length || 0)) {
-        const entity = buildAIEntity(); entity.root.visible = false; scene.add(entity.root); POOL.ais.push(entity);
+        const entity = buildPlayerEntity(); Object.assign(entity.root.userData,{kind:'ai',poolIdx:POOL.ais.length});
+        entity.root.visible = false; scene.add(entity.root); POOL.ais.push(entity);
     }
     POOL_SIZE.ais = POOL.ais.length;
     const disp = window.AppState?.display || {};
@@ -1538,10 +1544,19 @@ function updateAIs(ais) {
                 e.root.position.y = ty;
                 e.root.position.z = tz;
             }
-            // v700x3: AI 只显示侧边血条, 不显示 info sprite
             const color = _isEnemyOfViewer(frameViewer, a, false) ? PALETTE.ai : PALETTE.mate;
-            e.mesh.material.color.setHex(color);e.occ.material.color.setHex(color);
-            e.src = a; e.identityColor = color; e.modelScale = 1;
+            e.root.rotation.z = ueYawToThreeRotZ(Number(a.yaw)||0);
+            syncCharacterModel(e,'tactical',{hero:'AI通用步兵',quality:'performance',scale:1,
+                visibleColor:color,occludedColor:color,occludedOpacity:.35,showHeading:false,
+                loadModel:camera.position.distanceTo(e.root.position)<160});
+            animateCharacterModel(e,a,camera,performance.now(),renderer.domElement.clientHeight||900,'performance');
+            e.src = a; e.identityColor = color; e.modelScale = 1;e.poseHeightDelta=_poseHeightDelta(a);
+            const rangeM = _viewerRange(a,tx,ty,tz);
+            const info={name:(a.displayName||'AI单位')+(a.spawn_mark?' · 出生点':a.out_of_range?' · 最后位置':''),colorHex:color,
+                distanceM:rangeM,dim:!!a.spawn_mark||!!a.out_of_range,plate:disp.tagOpacity};
+            if(disp.showHealth!==false)info.hpText=Number.isFinite(a.hp)?`${Math.round(a.hp)} / ${a.maxHp>0?Math.round(a.maxHp):'?'}`:'血量未知';
+            if(disp.showWeapon!==false&&a.weapon)info.weapon=a.weaponText||a.weapon;
+            updateInfoCard(e.sprite,info,_pickDetail(rangeM,'player',followTarget?.name===a.name));
             let hpRatio = null;
             if (disp.showHealth !== false && a.maxHp > 0 && a.hp != null) {
                 hpRatio = a.hp / a.maxHp;
@@ -1591,36 +1606,30 @@ function updateItems(items) {
     for (let i = n; i < POOL_SIZE.items; ++i) POOL.items[i].root.visible = false;
 }
 
-/* v700x: 本人 (data.local) 位置更新. 跟 updatePlayers 结构一致 (lerp 位置/yaw). */
+/* 本人与其他人物共用 presenter 的位姿，不再叠加一层逐帧延迟。 */
 function updateSelf(local) {
     if (!selfEntity) return;
     if (!local || local.x == null) { selfEntity.root.visible = false; return; }
 
     const tx = ueToThreeX(local.x), ty = ueToThreeY(local.y), tz = ueToThreeZ(local.z);
-    if (!selfEntity.root.visible) {
-        selfEntity.root.position.set(tx, ty, tz);
-        selfEntity.root.visible = true;
-    } else {
-        selfEntity.root.position.x += (tx - selfEntity.root.position.x) * (window.AppState?.gameData?.replay ? 1 : 0.25);
-        selfEntity.root.position.y += (ty - selfEntity.root.position.y) * (window.AppState?.gameData?.replay ? 1 : 0.25);
-        selfEntity.root.position.z += (tz - selfEntity.root.position.z) * (window.AppState?.gameData?.replay ? 1 : 0.25);
+    selfEntity.root.position.set(tx, ty, tz);
+    if (cameraMode === CAMERA_MODES.FIRST_PERSON && followTarget?.kind === 'self') {
+        selfEntity.root.visible = false;
+        return;
     }
-    const targetYaw = ueYawToThreeRotZ(local.yaw);
-    let dy = targetYaw - selfEntity.root.rotation.z;
-    while (dy >  Math.PI) dy -= 2 * Math.PI;
-    while (dy < -Math.PI) dy += 2 * Math.PI;
-    selfEntity.root.rotation.z += dy * (window.AppState?.gameData?.replay ? 1 : 0.25);
+    selfEntity.root.visible = true;
+    selfEntity.root.rotation.z = ueYawToThreeRotZ(local.yaw);
 
     /* 头顶信息卡: 只显示 "我" + hero */
     const disp = window.AppState?.display || {};
     const scale = Number(disp.charScale) || 1;
     const color = _isEnemyOfViewer(frameViewer, local, true) ? PALETTE.teams[0] : PALETTE.self;
     const look = _modelColors(color, false, !!local.dead, disp);
-    syncCharacterModel(selfEntity,disp.model3d,{hero:local.hero,quality:_resolvedRenderQualityId(),scale,visibleColor:look.visible,occludedColor:look.occluded,
-        occludedOpacity:look.opacity,showHeading:disp.showCone !== false && Number.isFinite(local.yaw),
+    syncCharacterModel(selfEntity,disp.model3d,{hero:local.hero,quality:_operatorRenderQuality(),scale,visibleColor:look.visible,occludedColor:look.occluded,
+        occludedOpacity:look.opacity,showHeading:disp.showCone !== false && selfEntity.characterDetail === 2 && Number.isFinite(local.yaw),
         directionStyle:disp.directionStyle3d,directionAnchor:disp.directionAnchor3d,gearColors:EQUIP_COLORS});
-    animateCharacterModel(selfEntity,local,camera,performance.now(),renderer.domElement.clientHeight||900,_resolvedRenderQualityId());
-    selfEntity.src = local; selfEntity.identityColor = color; selfEntity.modelScale = scale;
+    animateCharacterModel(selfEntity,local,camera,performance.now(),renderer.domElement.clientHeight||900,_operatorRenderQuality());
+    selfEntity.src = local; selfEntity.identityColor = color; selfEntity.modelScale = scale;selfEntity.poseHeightDelta=_poseHeightDelta(local);
     const info = { name: disp.showName === false ? '' : '自己' + (local.hero ? ' ' + local.hero : ''), colorHex: color, plate: disp.tagOpacity };
     updateInfoCard(selfEntity.sprite,
         info,
@@ -1723,9 +1732,9 @@ const CAMERA_MODES = Object.freeze({
 const VALID_CAMERA_MODES = new Set(Object.values(CAMERA_MODES));
 const THIRD_PERSON_CAMERA = Object.freeze({
     LOOK_HEIGHT: 0.9,
-    INITIAL_DISTANCE: 30,
-    INITIAL_PITCH: 0.88,
-    MIN_USER_DISTANCE: 10,
+    INITIAL_DISTANCE: 4,
+    INITIAL_PITCH: 0.25,
+    MIN_USER_DISTANCE: 0.5,
     ANCHOR_LERP: 0.22,
 });
 const FIRST_PERSON_CAMERA = Object.freeze({
@@ -1965,6 +1974,7 @@ function _syncFollowButton() {
 function _applyCameraModeControls() {
     if (!controls) return;
     controls.enableRotate = cameraMode !== CAMERA_MODES.FIRST_PERSON;
+    controls.enableZoom = cameraMode !== CAMERA_MODES.FIRST_PERSON;
     controls.enablePan = cameraMode === CAMERA_MODES.FIRST_PERSON ? false : freeOrbitEnablePan;
     controls.minDistance = cameraMode === CAMERA_MODES.THIRD_PERSON
         ? Math.max(freeOrbitMinDistance, THIRD_PERSON_CAMERA.MIN_USER_DISTANCE)
@@ -2178,9 +2188,9 @@ function _worldPositionForTarget(hit) {
 }
 
 /* 第三人称只用该位姿初始化/重置，正常跟随不再根据目标 yaw 重算相机。 */
-function _computeThirdPersonPose(world, yaw) {
+function _computeThirdPersonPose(world, yaw, poseHeightDelta = 0) {
     const target = world.clone();
-    target.z += THIRD_PERSON_CAMERA.LOOK_HEIGHT;
+    target.z += THIRD_PERSON_CAMERA.LOOK_HEIGHT + poseHeightDelta;
     const horizontal = THIRD_PERSON_CAMERA.INITIAL_DISTANCE * Math.cos(THIRD_PERSON_CAMERA.INITIAL_PITCH);
     const vertical = THIRD_PERSON_CAMERA.INITIAL_DISTANCE * Math.sin(THIRD_PERSON_CAMERA.INITIAL_PITCH);
     const eye = new THREE.Vector3(
@@ -2193,7 +2203,7 @@ function _computeThirdPersonPose(world, yaw) {
 
 function _resetThirdPersonCamera(hit) {
     const world = _worldPositionForTarget(hit);
-    const pose = _computeThirdPersonPose(world, ueYawToThreeRotZ(hit.yaw));
+    const pose = _computeThirdPersonPose(world, ueYawToThreeRotZ(hit.yaw), _poseHeightDelta(hit));
     controls.target.copy(pose.target);
     camera.position.copy(pose.eye);
     followState.anchor = pose.target.clone();
@@ -2201,24 +2211,30 @@ function _resetThirdPersonCamera(hit) {
     controls.update();
 }
 
-/* 「第一视角高度」设置是离脚底的眼高（默认 1.6m）；UE 给的是胶囊中心（脚底上方约 0.9m）。
-   以前把设置值直接加在中心上，眼睛实际在 2.5m，高出被跟随者头顶一截。 */
-const CAPSULE_CENTER_ABOVE_FOOT_M = 0.9;
-function _firstPersonEyeOffset() {
+/* 展示层统一为胶囊基准；MRA 网格原点和上行根坐标在 adapter 中区分。
+   眼高相对站立网格原点配置，姿态变化取原生骨架的相对头高，不吸附地面。 */
+const CAPSULE_CENTER_ABOVE_FOOT_M = CHARACTER_ROOT_ABOVE_MESH_M;
+function _poseHeightDelta(hit) {
+    const hero=hit?.hero || (hit?.kind==='ai'?'AI通用步兵':'');
+    return _operatorDefinition(hero)?.headOffsets?.[operatorState(hit)]?.[2] || 0;
+}
+function _firstPersonEyeOffset(hit) {
     const h = Number(window.AppState?.display?.eyeHeight);
-    return Number.isFinite(h) && h > 0 ? h - CAPSULE_CENTER_ABOVE_FOOT_M : FIRST_PERSON_CAMERA.EYE_HEIGHT;
+    const poseDelta=hit?.position_origin==='mesh'||hit?.view?.origin==='mesh-normalized'?_poseHeightDelta(hit):0;
+    return Math.max(.1,(Number.isFinite(h)&&h>0?h:1.6)+poseDelta)-CAPSULE_CENTER_ABOVE_FOOT_M;
 }
 
 function _resetFirstPersonCamera(hit) {
-    const eye = _worldPositionForTarget(hit);
-    eye.z += _firstPersonEyeOffset();
-    const direction = new THREE.Vector3(...aimDirection(Number(hit.yaw)||0,Number(hit.pitch)||0));
+    const view = hit.view;
+    const eye = view ? new THREE.Vector3(view.world[0]/100,-view.world[1]/100,view.world[2]/100) : _worldPositionForTarget(hit);
+    eye.z += _firstPersonEyeOffset(hit);
+    const direction = new THREE.Vector3(...aimDirection(Number(view?.yaw ?? hit.yaw)||0,Number(view?.pitch ?? hit.pitch)||0));
     camera.position.copy(eye);
     controls.target.copy(eye).addScaledVector(direction, FIRST_PERSON_CAMERA.LOOK_DISTANCE);
     camera.lookAt(controls.target);
     followState.eye = eye.clone();
+    followState.eyeOffset = _firstPersonEyeOffset(hit);
     followState.needsCameraReset = false;
-    controls.update();
 }
 
 /* 重置按当前模式执行：自由模式回总览；跟随模式回各自的标准初始位姿。 */
@@ -2282,6 +2298,67 @@ window.radar3dFollow = function(kind, name) {
     console.log(`[Radar3D] 开始跟随: ${kind} "${name}"`);
 };
 
+/* ---------------------------------------------------------------- 第三人称防穿墙
+   从注视点向镜头打射线，被地图挡住时把本帧镜头拉到障碍物前。
+   - 求交走 map-raycast.js 的分块 XY 网格（首次经过某块时懒建），不再用 Mesh.raycast 逐面测试。
+   - 拉近只作用于这一帧的渲染：下一帧控制器更新前 _restoreFollowCamera 放回用户设定的位置。
+     OrbitControls 每次 update 都从相机当前位置重算轨道半径，若直接保留拉近后的位置，
+     镜头会一路变近、障碍消失后也退不回去。
+   - 被挡住时立即拉近（不能穿墙）；障碍消失后按指数平滑退回，避免镜头来回跳。 */
+const FOLLOW_COLLISION_PAD = 0.25;
+const FOLLOW_COLLISION_MIN = 0.05;
+const FOLLOW_COLLISION_RETURN_MS = 180;
+const followCollision = { active: false, desired: new THREE.Vector3(), shown: new THREE.Vector3(), distance: NaN, at: 0 };
+const followCollisionDirection = new THREE.Vector3();
+const _rayClip = new Float64Array(2);
+
+/* 射线 origin + dir·t 与地图的最近交点距离（dir 为单位向量），[near, far] 内无命中返回 Infinity。 */
+function _raycastMapNearest(origin, dir, near, far) {
+    let best = Infinity;
+    for (const chunk of mapMesh.children) {
+        const g = chunk.geometry;
+        if (!g?.index || !g.boundingBox) continue;
+        const b = g.boundingBox;
+        const box = g.userData.rayBox || (g.userData.rayBox = [b.min.x, b.min.y, b.min.z, b.max.x, b.max.y, b.max.z]);
+        const limit = Math.min(far, best);
+        if (!clipSegmentToBox(box, origin.x, origin.y, origin.z, dir.x, dir.y, dir.z, near, limit, _rayClip)) continue;
+        const position = g.attributes.position.array, index = g.index.array;
+        const grid = g.userData.rayGrid || (g.userData.rayGrid = buildRayGrid(position, index));
+        const t = raycastRayGrid(grid, position, index, origin.x, origin.y, origin.z, dir.x, dir.y, dir.z, near, limit);
+        if (t < best) best = t;
+    }
+    return best;
+}
+
+function _restoreFollowCamera() {
+    if (!followCollision.active) return;
+    followCollision.active = false;
+    // 期间别的逻辑（重置视角、切换模式、聚焦）改过镜头时以它为准
+    if (camera.position.equals(followCollision.shown)) camera.position.copy(followCollision.desired);
+}
+
+function _avoidFollowCameraCollision(now = performance.now()) {
+    const dt = Math.min(100, Math.max(0, now - followCollision.at));
+    followCollision.at = now;
+    if (cameraMode !== CAMERA_MODES.THIRD_PERSON || !mapMesh) { followCollision.distance = NaN; return; }
+    followCollisionDirection.copy(camera.position).sub(controls.target);
+    const desired = followCollisionDirection.length();
+    if (desired < FOLLOW_COLLISION_MIN) return;
+    followCollisionDirection.multiplyScalar(1 / desired);
+    const hit = _raycastMapNearest(controls.target, followCollisionDirection, FOLLOW_COLLISION_MIN, desired + FOLLOW_COLLISION_PAD);
+    const limit = Number.isFinite(hit) ? Math.min(desired, Math.max(FOLLOW_COLLISION_MIN, hit - FOLLOW_COLLISION_PAD)) : desired;
+    let shown = followCollision.distance;
+    if (!Number.isFinite(shown) || limit <= shown) shown = limit;
+    else shown += (limit - shown) * (1 - Math.exp(-dt / FOLLOW_COLLISION_RETURN_MS));
+    if (shown >= desired - 0.01) { followCollision.distance = NaN; return; }
+    followCollision.distance = shown;
+    followCollision.desired.copy(camera.position);
+    camera.position.copy(controls.target).addScaledVector(followCollisionDirection, shown);
+    followCollision.shown.copy(camera.position);
+    followCollision.active = true;
+    camera.lookAt(controls.target);
+}
+
 /* 每帧跟随核心；firstPerson 调用前需先让 controls.update() 吸收用户观察方向。 */
 function updateFollow(controlsAlreadyUpdated = false) {
     if (cameraMode === CAMERA_MODES.FREE || !followTarget || !followState) return;
@@ -2309,10 +2386,16 @@ function updateFollow(controlsAlreadyUpdated = false) {
         } else {
             direction.normalize();
         }
-        if(Number.isFinite(hit.yaw)) direction.set(...aimDirection(hit.yaw,Number(hit.pitch)||0));
-        const desiredEye = _worldPositionForTarget(hit);
-        desiredEye.z += _firstPersonEyeOffset();
-        if (!followState.eye) followState.eye = desiredEye.clone();
+        const view = hit.view;
+        if(Number.isFinite(view?.yaw ?? hit.yaw)) direction.set(...aimDirection(view?.yaw ?? hit.yaw,Number(view?.pitch ?? hit.pitch)||0));
+        const desiredEye = view ? new THREE.Vector3(view.world[0]/100,-view.world[1]/100,view.world[2]/100) : _worldPositionForTarget(hit);
+        const eyeOffset=_firstPersonEyeOffset(hit),cameraAt=performance.now();
+        const stanceDt=Math.min(100,Math.max(0,cameraAt-(followState.eyeUpdatedAt??cameraAt-16.67)));
+        if(!Number.isFinite(followState.eyeOffset)||followState.eye?.distanceTo(desiredEye)>5)followState.eyeOffset=eyeOffset;
+        else followState.eyeOffset+=(eyeOffset-followState.eyeOffset)*(1-Math.exp(-stanceDt/80));
+        desiredEye.z += followState.eyeOffset;
+        if (!followState.eye || view) followState.eye = desiredEye.clone();
+        else if (followState.eye.distanceTo(desiredEye) > 5) followState.eye.copy(desiredEye);
         else {
             const now = performance.now(), dt = Math.min(100, Math.max(0, now - (followState.eyeUpdatedAt ?? now - 16.67)));
             const tau = Number(window.AppState?.display?.fpvtau);
@@ -2332,7 +2415,7 @@ function updateFollow(controlsAlreadyUpdated = false) {
         return;
     }
     const desiredAnchor = _worldPositionForTarget(hit);
-    desiredAnchor.z += THIRD_PERSON_CAMERA.LOOK_HEIGHT;
+    desiredAnchor.z += THIRD_PERSON_CAMERA.LOOK_HEIGHT + _poseHeightDelta(hit);
     if (!followState.anchor) followState.anchor = desiredAnchor.clone();
     const nextAnchor = followState.anchor.clone().lerp(desiredAnchor, window.AppState?.gameData?.replay ? 1 : THIRD_PERSON_CAMERA.ANCHOR_LERP);
     const delta = nextAnchor.clone().sub(followState.anchor);
@@ -2457,6 +2540,17 @@ function _radarBlankMapTexture() {
     return _blankMapTexture;
 }
 
+/* 地图的法线属性是常量朝上（见 _installMapChunks）。阴影的法线偏移沿顶点法线进行，在竖直墙面上
+   等于沿墙面平移、完全不起作用，墙面会自遮挡出斜纹。片元阶段改用平面法线：把顶点阶段已加上的
+   「顶点法线 × normalBias」换成「平面法线 × normalBias」。阴影坐标是世界坐标的仿射变换，
+   偏移可以直接线性叠加。three 升级后若找不到要替换的片段，退回原行为并告警。 */
+const RADAR_SHADOW_COORD_CALL = 'vDirectionalShadowCoord[ i ] )';
+const RADAR_LIGHTS_FRAGMENT_BEGIN = THREE.ShaderChunk.lights_fragment_begin.includes(RADAR_SHADOW_COORD_CALL)
+    ? THREE.ShaderChunk.lights_fragment_begin.replace(RADAR_SHADOW_COORD_CALL,
+        'radarFlatShadowCoord( vDirectionalShadowCoord[ i ], directionalShadowMatrix[ i ], directionalLightShadow.shadowNormalBias, geometryNormal ) )')
+    : null;
+if (!RADAR_LIGHTS_FRAGMENT_BEGIN) console.warn('[Radar3D] three 光照片段已变化，地图墙面阴影偏移修正未生效');
+
 /* hasBake：几何带 bake 属性（Uint8 归一化，R = 半球 AO，G = 头顶天空可见度）。
    用 define 区分变体：无该属性时绝不能读 attribute（WebGL 默认值 0，整图会变黑）。 */
 function _createRadarMapMaterial(zLow, zHigh, cutaway = false, hasBake = false) {
@@ -2504,6 +2598,7 @@ function _createRadarMapMaterial(zLow, zHigh, cutaway = false, hasBake = false) 
         flatShading: true,
     });
     if (hasBake) material.defines = { ...(material.defines || {}), RADAR_BAKE: '' };
+    if (RADAR_LIGHTS_FRAGMENT_BEGIN) material.defines = { ...(material.defines || {}), RADAR_FLAT_SHADOW: '' };
     material.userData.radarUniforms = uniforms;
     material.userData.radarAdaptiveContour = adaptiveContour;
     material.userData.radarCutawayVariant = cutaway;
@@ -2521,6 +2616,16 @@ uniform mat3 radarMapUvMatrix;
 #ifdef RADAR_BAKE
 attribute vec2 bake;
 varying vec2 vRadarBake;
+#endif
+#if defined( RADAR_FLAT_SHADOW ) && defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+varying vec3 vRadarShadowNormal;
+#endif`,
+            )
+            .replace(
+                '#include <shadowmap_vertex>',
+                `#include <shadowmap_vertex>
+#if defined( RADAR_FLAT_SHADOW ) && defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+vRadarShadowNormal = shadowWorldNormal;
 #endif`,
             )
             .replace(
@@ -2564,7 +2669,19 @@ uniform float radarMapWallTint;
 uniform float radarAoStrength;
 #ifdef RADAR_BAKE
 varying vec2 vRadarBake;
+#endif
+#if defined( RADAR_FLAT_SHADOW ) && defined( USE_SHADOWMAP ) && NUM_DIR_LIGHT_SHADOWS > 0
+uniform mat4 directionalShadowMatrix[ NUM_DIR_LIGHT_SHADOWS ];
+varying vec3 vRadarShadowNormal;
+vec4 radarFlatShadowCoord( vec4 coord, mat4 shadowMatrix, float normalBias, vec3 viewNormal ) {
+    vec3 flatNormal = inverseTransformDirection( viewNormal, viewMatrix );
+    return coord + shadowMatrix * vec4( ( flatNormal - vRadarShadowNormal ) * normalBias, 0.0 );
+}
 #endif`,
+            )
+            .replace(
+                '#include <lights_fragment_begin>',
+                () => RADAR_LIGHTS_FRAGMENT_BEGIN || '#include <lights_fragment_begin>',
             )
             .replace(
                 '#include <normal_fragment_maps>',
@@ -2624,7 +2741,7 @@ if ( radarDetailEnabled > 0.5 ) {
             );
         material.userData.radarShader = shader;
     };
-    material.customProgramCacheKey = () => `relink-radar-map-style-v5-${cutaway ? 'cutaway' : 'plain'}-${hasBake ? 'bake' : 'nobake'}`;
+    material.customProgramCacheKey = () => `relink-radar-map-style-v6-${cutaway ? 'cutaway' : 'plain'}-${hasBake ? 'bake' : 'nobake'}`;
     return material;
 }
 
@@ -3109,6 +3226,11 @@ function _updateMapShaderViewUniforms() {
    阴影相机中心在光源空间按 texel 对齐：光向固定，静态几何每次重画都落在同一批 texel 上，
    跨格重画时阴影边缘不会游动闪烁。分块后阴影 pass 只画阴影框内的块。 */
 const SHADOW_DYNAMIC_MS = 100;
+/* 人物投影只在阴影框半宽不超过此值（阴影像素约 0.33m 以内）时开启。总览把框放大到 800m 级，
+   一个阴影像素约 0.8m，人物影子看不出来，却会让每次人物移动都重画整张地图的阴影图。 */
+const SHADOW_DYNAMIC_MAX_SPAN = 170;
+/* 法线偏移按阴影像素大小给：固定 0.055m 只有约 1/4 个像素，竖直墙面在 PCF 采样下仍会自遮挡出斜纹。 */
+const SHADOW_NORMAL_BIAS_TEXELS = 1.0;
 const SHADOW_LIGHT_DIR = new THREE.Vector3(1.05, -1.25, 1.90).normalize();
 const SHADOW_LIGHT_DISTANCE = 700;
 const _shadowCenter = new THREE.Vector3(), _shadowAhead = new THREE.Vector3(), _shadowSnap = new THREE.Vector3();
@@ -3134,6 +3256,7 @@ function _placeShadowCamera(center, span) {
         shadowRig.basisReady = true;
     }
     const texel = 2 * span / Math.max(1, dirLight.shadow.mapSize.x);
+    dirLight.shadow.normalBias = texel * SHADOW_NORMAL_BIAS_TEXELS;
     const r = center.dot(shadowRig.right), u = center.dot(shadowRig.up);
     _shadowSnap.copy(center)
         .addScaledVector(shadowRig.right, Math.round(r / texel) * texel - r)
@@ -3152,25 +3275,32 @@ function _placeShadowCamera(center, span) {
     _requestShadowUpdate();
 }
 
-/* 框内可见人物的位姿签名（5cm / 0.05rad 量化）；顺带给新建的人物模型补上 castShadow
-   （人物模型可能在画质应用之后才创建）。 */
+/* 框内可见人物的位姿签名（5cm / 0.05rad 量化）；顺带同步人物模型的 castShadow
+   （人物模型可能在画质应用之后才创建）。阴影框过大时人物一律不投影、签名恒定，
+   人物移动不再触发重画；切换时签名变化，会重画一次清掉残留的人物影子。 */
 function _shadowCasterSignature() {
+    const dynamic = shadowRig.span <= SHADOW_DYNAMIC_MAX_SPAN;
     let sig = 0, n = 0;
     const c = shadowRig.center, lim = shadowRig.span + 4;
     const visit = root => {
-        if (!root?.visible) return;
+        if (!root) return;
+        root.traverse(o => {
+            if (!o.isMesh || !o.userData.radarLitSurface) return;
+            const cast = dynamic && o.userData.radarShadowCaster !== false;
+            if (o.castShadow !== cast) o.castShadow = cast;
+        });
+        if (!dynamic || !root.visible) return;
         const p = root.position;
         if (Math.abs(p.x - c.x) > lim || Math.abs(p.y - c.y) > lim) return;
         n++;
         sig = (sig * 31 + Math.round(p.x * 20) * 3 + Math.round(p.y * 20) * 7
             + Math.round(p.z * 20) * 11 + Math.round(root.rotation.z * 20) * 13) % 1e15;
-        root.traverse(o => { if (o.isMesh && o.userData.radarLitSurface && !o.castShadow) o.castShadow = true; });
     };
     if (selfEntity) visit(selfEntity.root);
     for (const e of POOL.players) visit(e.root);
     for (const e of POOL.bosses) visit(e.root);
     for (const e of POOL.ais) visit(e.root);
-    return sig * 256 + n;
+    return dynamic ? sig * 256 + n : -1;
 }
 
 /* 诊断：按三维引擎同样的包围球-视锥测试，统计地图块在主相机 / 阴影相机里的可见量
@@ -3265,6 +3395,7 @@ function _monitorAutoRenderQuality(now, active) {
 }
 
 function resize() {
+    mobileGpuProfile = null;
     if (!renderer) return;
     const w = canvas.clientWidth, h = canvas.clientHeight;
     if (!w || !h) return;
@@ -3339,17 +3470,19 @@ function _hudPush(entity, isSelf, viewer, disp, alertD) {
     const pos = entity.root.position;
     it.x = pos.x; it.y = pos.y; it.z = pos.z;
     it.scale = entity.modelScale || 1;
+    it.headDelta = entity.poseHeightDelta || 0;
     it.color = entity.identityColor ?? PALETTE.unknown;
     it.enemy = enemy; it.alert = alert; it.ai = src.kind === 'ai';
     it.down = src.status_key === 'down' || src.status_key === 'dying';
     it.spawn = !!src.spawn_mark; it.stale = stale; it.dist = dist;
     it.hp = disp.showHealth !== false && src.maxHp > 0 && Number.isFinite(src.hp)
         ? Math.max(0, Math.min(1, src.hp / src.maxHp)) : null;
-    it.far = !it.ai && !entity.sprite?.visible;
+    it.hpText = disp.showHealth === false ? '' : !Number.isFinite(src.hp) ? '血量未知' : `${Math.round(src.hp)}/${src.maxHp>0?Math.round(src.maxHp):'?'}`;
+    it.far = !entity.sprite?.visible;
     if (it.far) {
-        const name = disp.showName !== false ? (isSelf ? '自己' : (src.hero || src.displayName || '')) : '';
+        const name = disp.showName !== false ? (isSelf ? '自己' : (src.hero || src.displayName || '')+(src.spawn_mark?' · 出生点':'')) : '';
         const d = disp.showDistance !== false && dist != null ? Math.round(dist) + 'm' : '';
-        it.text = name && d ? name + ' ' + d : name || d;
+        it.text = [name, d, it.hpText].filter(Boolean).join(' · ');
     } else it.text = '';
 }
 
@@ -3357,6 +3490,8 @@ function _drawHud(now, data) {
     if (!hud) return;
     const disp = window.AppState?.display || {};
     const h = disp.hud || {};
+    // 第一跟随的观察对象信息由页面底部的观察条显示，HUD 不再在画面顶部画卡片（会与远距名牌重叠）
+    hudExtra.observer = null;
     hudOpt.foe = h.foe !== 0; hudOpt.ray = !!h.ray; hudOpt.box = !!h.box3d;
     hudOpt.warn = !!h.warn3d; hudOpt.warnD = Number(h.warnd) || 0;
     hudOpt.warnR = Number(h.warnr) || 200; hudOpt.warnSz = Number(h.warnsz) || 100;
@@ -3402,10 +3537,9 @@ function _ensurePoiLayer() {
     if (mapMesh && currentMapName) poiLayer.install(currentMapName, mapMesh, scene);
 }
 
-/* 侧边血条是 XY 平面网格：在 Z 朝上的世界里它是平躺的，又关了深度测试，
-   看上去是一条贯穿人物的黑线。每帧把它竖起来、转向镜头，并放在镜头视角下人物的左侧。 */
+/* 血条位于头顶并面向镜头，不继承人物转身造成的侧向偏移。 */
 const _hpWorldQ = new THREE.Quaternion(), _hpRootInv = new THREE.Quaternion();
-const _hpEuler = new THREE.Euler(0, 0, 0, 'ZXY'), _hpOffset = new THREE.Vector3();
+const _hpEuler = new THREE.Euler(0, 0, 0, 'ZXY');
 function _billboardHpBar(entity, camPos) {
     const g = entity?.hpBar?.group;
     if (!g || !g.visible || !entity.root.visible) return;
@@ -3415,22 +3549,66 @@ function _billboardHpBar(entity, camPos) {
     _hpWorldQ.setFromEuler(_hpEuler);
     _hpRootInv.copy(entity.root.quaternion).invert();           // 根节点只有绕 Z 的朝向
     g.quaternion.copy(_hpRootInv).multiply(_hpWorldQ);
-    const off = 0.55 * (entity.modelScale || 1);
-    g.position.copy(_hpOffset.set(Math.sin(theta) * off, -Math.cos(theta) * off, 0).applyQuaternion(_hpRootInv));
+    g.position.set(0, 0, -CHARACTER_ROOT_ABOVE_MESH_M + (1.8+(entity.poseHeightDelta||0)) * (entity.modelScale || 1) + .22);
 }
 
-let gatewayLastSlow = 0, gatewaySlowData = null, gatewayFrameAt=0, gatewayFps=0, gatewayFrames=0, gatewayFpsAt=0;
+function _renderFrameLimit(cap,mobile,hasLivePose) {
+    if (Number.isFinite(cap) && cap > 0) return cap;
+    return mobile || !hasLivePose ? 30 : 60;
+}
+let gatewayLastSlow = 0, gatewaySlowData = null, gatewayFps=0, gatewayFrames=0, gatewayFpsAt=0;
+let gatewayFrameSource = null;
+
+/* 帧率上限按「下一帧应在何时」累计调度。以前用「距上次渲染满一个间隔」判断，刷新率不是上限的
+   整数倍时每次都多等一个刷新周期：144Hz 屏上 60 上限只有 48 帧，75Hz 只有 37.5 帧。
+   容差取半个刷新周期（不超过半个间隔）以吸收 rAF 时间戳抖动；落后超过一个间隔就重新对齐，不补帧。 */
+const frameClock = { last: 0, refresh: 1000 / 60, next: 0, direct: true };
+function _frameDue(now, cap) {
+    const dt = now - frameClock.last;
+    frameClock.last = now;
+    // 刷新周期只用相邻两次 rAF 的间隔估计；定时器睡过的那一段跨了多个周期，不能算
+    if (frameClock.direct && dt > 1 && dt < 100) frameClock.refresh += (dt - frameClock.refresh) * 0.1;
+    if (!(cap > 0)) return true;
+    const interval = 1000 / cap;
+    if (now < frameClock.next - Math.min(frameClock.refresh, interval) * 0.5) return false;
+    frameClock.next += interval;
+    if (frameClock.next <= now) frameClock.next = now + interval;
+    return true;
+}
+/* 渲染循环自己排程，不用 setAnimationLoop：高刷屏（144–300 Hz）上 rAF 远快于帧率上限，空转的回调
+   同样唤醒主线程并推动整条帧流水线。离下一帧还早就先用定时器睡到到期前约 1.5 个刷新周期，
+   再用 rAF 逐个周期逼近，由 _frameDue 的容差落在到期时刻最近的那次刷新上——定时器醒得早晚不影响帧节拍。
+   60 Hz 屏上提前量已大于帧间隔，等同每帧 rAF。2D 模式与后台页停掉循环，靠 viewModeChanged / visibilitychange 唤醒。 */
+let loopRaf = 0, loopTimer = 0;
+function _loopFrame() {
+    loopRaf = 0;
+    tick();
+    _scheduleLoop();
+}
+function _scheduleLoop() {
+    if (loopRaf || loopTimer || !renderer) return;
+    if (window.viewMode !== '3d' || document.hidden) {
+        // 停下前清掉 HUD 与帧率统计（tick 的非活动分支）
+        tick();
+        return;
+    }
+    const wait = frameClock.next - performance.now() - (frameClock.refresh * 1.5 + 2);
+    frameClock.direct = !(wait > 1);
+    if (wait > 1) loopTimer = setTimeout(() => { loopTimer = 0; loopRaf = requestAnimationFrame(_loopFrame); }, wait);
+    else loopRaf = requestAnimationFrame(_loopFrame);
+}
 function tick() {
-    const active = window.viewMode === '3d';
-    const frameAt=performance.now(), cap=Number(window.AppState?.display?.fpscap)||0;
+    const active = window.viewMode === '3d' && !document.hidden;
+    const state=window.AppState?.gameData;
+    const frameAt=performance.now(), cap=_renderFrameLimit(Number(window.AppState?.display?.fpscap),_isMobileGpuProfile(),!!state?.local || !!state?.players?.length);
     if (!active) {
         // 2D 模式下完全不做 3D 工作；以前仍每帧更新相机、跟随、光照与 shader uniform
         gatewayFps=0;gatewayFrames=0;gatewayFpsAt=frameAt;
         hud?.clear();
         return;
     }
-    if(cap>0 && frameAt-gatewayFrameAt<1000/cap-0.5)return;
-    gatewayFrameAt=frameAt;
+    if (!_frameDue(frameAt, cap)) return;
+    gatewayFrameSource?.(frameAt);
     gatewayFrames++;if(frameAt-gatewayFpsAt>=1000){gatewayFps=gatewayFrames*1000/(frameAt-gatewayFpsAt);gatewayFrames=0;gatewayFpsAt=frameAt;}
     const data = window.AppState?.gameData;
     const frameCount = window.AppState?.frameCount ?? 0;
@@ -3462,6 +3640,7 @@ function tick() {
             }
         }
     }
+    _restoreFollowCamera();
     // Finish pending controls updates before applying the authoritative first-person pose.
     if (cameraMode === CAMERA_MODES.FIRST_PERSON && followTarget) {
         controls.update();
@@ -3471,6 +3650,8 @@ function tick() {
         // 相机始终更新 (即使切走了也保持状态)
         controls.update();
     }
+    _avoidFollowCameraCollision(now);
+    firstPersonWeapon?.update(_resolveFollowTargetData(followTarget, data), cameraMode === CAMERA_MODES.FIRST_PERSON, now);
     _updateIndoorClarityUniforms();
     _updateLightingRig();
     _updateMapShaderViewUniforms();
@@ -3510,6 +3691,8 @@ function tick() {
         const shadowPass = renderer.shadowMap.enabled && renderer.shadowMap.needsUpdate;
         if (usePostProcessing) composer.render();
         else renderer.render(scene, camera);
+        // 诊断：dev/fpv-check.mjs 置 window.__msFrameLog = [] 后，逐帧记录渲染时刻、相机位置（米）与视线方向
+        if (window.__msFrameLog) { const m = camera.matrixWorld.elements; window.__msFrameLog.push(frameAt, m[12], m[13], m[14], -m[8], -m[9], -m[10]); }
         // 诊断：阴影图重画频率（r161 的 renderer.info 在阴影 pass 之后才清零，只反映主 pass；
         // 阴影 pass 的量见 stat().mapCull.shadow）
         if (shadowPass) { shadowRig.lastAt = frameAt; shadowRig.updates++; }
@@ -3652,6 +3835,7 @@ function gatewayInstallGeometry(name, geo) {
             if (seq !== mapInstallSeq) return;
             console.error('[Radar3D] 地图分块失败', error);
             window.showRadarToast?.('3D 地图构建失败：' + (error?.message || error));
+            throw error;
         });
 }
 
@@ -3666,6 +3850,7 @@ function _installMapChunks(name, result, heightRange, meta, nTri) {
     const materials = [plainMaterial, wallMaterial];
     // 地图材质是 flatShading，不需要真实顶点法线；但阴影 normalBias 会 normalize 法线，缺属性时
     // 是零向量 → NaN，地图收不到阴影。所以给常量朝上的 8 位法线，各块共用同一段内存。
+    // 墙面阴影偏移的方向由材质片元里的平面法线修正（RADAR_FLAT_SHADOW）。
     let maxVerts = 0;
     for (const c of result.chunks) maxVerts = Math.max(maxVerts, c.position.length / 3);
     const upNormal = new Int8Array(maxVerts * 3);
@@ -3737,6 +3922,7 @@ function _installMapChunks(name, result, heightRange, meta, nTri) {
 }
 
 export const gateway = {
+    setFrameSource(fn){gatewayFrameSource=fn;},
     inspect(){
         const entities=[];
         for(const [kind,pool] of Object.entries(POOL))for(const e of pool)if(e.root.visible)
@@ -3788,6 +3974,7 @@ export const gateway = {
         playerKeys: POOL.players.filter(e => e.root.visible).map(e => e.root.userData.entityKey),
         humanPlayers: POOL.players.filter(e=>e.root.visible && !window.AppState?.gameData?.players.find(p=>p.key===e.root.userData.entityKey)?.is_bot).length,
         mapBounds: mapBounds?.clone(), renderCalls: renderer?.info.render.calls || 0,
+        resources:{geometries:renderer?.info.memory.geometries||0,textures:renderer?.info.memory.textures||0,heapMB:performance.memory?Math.round(performance.memory.usedJSHeapSize/1048576):null},
         triangles: renderer?.info.render.triangles || 0,
         mapChunks: mapMesh?.userData.chunkStats || null, mapBake: !!mapMesh?.userData.hasBake,
         mapCull: { camera: _mapCullStats(camera), shadow: renderer?.shadowMap.enabled ? _mapCullStats(dirLight?.shadow.camera) : null },

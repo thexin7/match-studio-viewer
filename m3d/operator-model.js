@@ -1,11 +1,23 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { createOperatorRifle, RIFLE_RIGHT_GRIP } from './operator-weapon.js?v=1.0.1';
-import { locomotionWeights, operatorState, hasHeldWeapon, animationStep } from './operator-motion.js?v=1.0.1';
+import { createOperatorRifle, createOperatorRod, RIFLE_RIGHT_GRIP } from './operator-weapon.js?v=1.0.2';
+import { locomotionWeights, operatorState, hasHeldWeapon, hasFishingRod, animationStep } from './operator-motion.js?v=1.1.0';
 
 const assets=new Map();
-let loadQueue=Promise.resolve();
+const modelLoadQueue=[];
+let activeModelLoads=0;
+function enqueueOperatorLoad(task) {
+  return new Promise((resolve,reject)=>{
+    const run=()=>{
+      activeModelLoads++;
+      Promise.resolve().then(task).then(resolve,reject).finally(()=>{
+        activeModelLoads--;modelLoadQueue.shift()?.();
+      });
+    };
+    if(activeModelLoads<2)run();else modelLoadQueue.push(run);
+  });
+}
 export const operatorAssetState = definition => assets.get(definition?.src)?.state || 'idle';
 export function loadOperatorAsset(definition) {
   if(!definition)return Promise.resolve(null);
@@ -13,7 +25,7 @@ export function loadOperatorAsset(definition) {
   const entry={state:'loading',asset:null,loading:null};assets.set(definition.src,entry);
   // The existing HTTP server serves the precompressed .gz sibling. Let the
   // browser decode Content-Encoding, including on older mobile browsers.
-  entry.loading=loadQueue.then(()=>new GLTFLoader().loadAsync(definition.src)).then(gltf=>{
+  entry.loading=enqueueOperatorLoad(()=>new GLTFLoader().loadAsync(definition.src)).then(gltf=>{
     const referencePose=gltf.animations.find(clip=>clip.name==='TPose');
     if(!referencePose)throw new Error('干员模型缺少参考姿态');
     const referenceMixer=new THREE.AnimationMixer(gltf.scene);referenceMixer.clipAction(referencePose).play();referenceMixer.update(0);
@@ -62,7 +74,6 @@ export function loadOperatorAsset(definition) {
     entry.asset={scene:gltf.scene,clips,bounds,scale:definition.native?1:1.8/height,highTriangles:high.reduce((n,o)=>n+o.geometry.index.count/3,0),lowTriangles:low.reduce((n,o)=>n+o.geometry.index.count/3,0)};
     entry.state='ready';return entry.asset;
   }).catch(error=>{entry.state='error';console.warn('[干员模型] 加载失败，使用简化模型',error);return null;});
-  loadQueue=entry.loading.then(()=>null);
   return entry.loading;
 }
 
@@ -98,6 +109,7 @@ export function createRealisticOperator(definition) {
     shell.userData.operatorLod=mesh.userData.operatorLod;shell.userData.radarExcludeFromSsao=true;mesh.parent.add(shell);mesh.userData.operatorShell=shell;
   }
   const rifle=createOperatorRifle(occluded);root.add(rifle);
+  const rod=createOperatorRod();root.add(rod);rod.visible=false;
   const mixer=new THREE.AnimationMixer(model),actions={};
   for(const clip of asset.clips){if(clip.name==='TPose')continue;const action=mixer.clipAction(clip);action.setEffectiveWeight(0).play();if(clip.name==='Death'){action.setLoop(THREE.LoopOnce,1);action.clampWhenFinished=true;}actions[clip.name]=action;}
   actions.Idle.setEffectiveWeight(1);mixer.update(0);root.updateMatrixWorld(true);
@@ -119,22 +131,32 @@ export function createRealisticOperator(definition) {
       const measured=dt>0?Math.hypot(localVelocity.x,localVelocity.y)/dt:0;
       if(measured<15)speed+=(measured-speed)*(1-Math.exp(-dt*7));else speed=0;
       root.getWorldQuaternion(q).invert();localVelocity.applyQuaternion(q);
-      const distance=camera.position.distanceTo(p),current=operatorState(source),armed=hasHeldWeapon(source);
+      const distance=camera.position.distanceTo(p),current=operatorState(source),armed=hasHeldWeapon(source),fishing=hasFishingRod(source);
       setLod(detail===1&&asset.lowTriangles>0?1:0);pending+=dt;
       if(pending<Math.max(animationStep(distance,quality),detail===1?(quality==='high'?1/24:1/12):0)&&current===lastState)return;
       dt=pending;pending=0;
       if(current==='Death'&&lastState!=='Death')actions.Death.reset().play();
       const forward=localVelocity.x===0&&localVelocity.y===0?1:localVelocity.x;
       let target=current==='moving'?locomotionWeights(speed,forward,localVelocity.y):{[current]:1};
-      if(!armed&&current==='moving'&&target.Idle&&actions.Relaxed){target={...target,Relaxed:target.Idle,Idle:0};}
+      if(current==='Swim'){
+        const moving=Math.min(1,speed/1.2);target={Swim:moving,SwimIdle:1-moving};
+      }
+      if(!armed&&!fishing&&current==='moving'&&target.Idle&&actions.Relaxed){target={...target,Relaxed:target.Idle,Idle:0};}
       if(!actions.Sprint&&target.Sprint){target.Run=(target.Run||0)+target.Sprint;target.Sprint=0;}
       for(const name of ['Backward','Left','Right'])if(!actions[name]&&target[name]){target.Walk=(target.Walk||0)+target[name];target[name]=0;}
-      if(!actions.Crouch&&current==='Crouch')target={Idle:1};
+      if(current!=='moving'&&!actions[current])target={Idle:1};
       const blend=1-Math.exp(-dt*10);
-      for(const [name,action]of Object.entries(actions)){weights[name]=(weights[name]||0)+((target[name]||0)-(weights[name]||0))*blend;action.enabled=true;action.setEffectiveWeight(weights[name]);}
+      for(const [name,action]of Object.entries(actions)){
+        weights[name]=(weights[name]||0)+((target[name]||0)-(weights[name]||0))*blend;
+        if(!target[name]&&weights[name]<.0001)weights[name]=0;
+        action.enabled=weights[name]>0;action.setEffectiveWeight(weights[name]);
+      }
       const walkRate=THREE.MathUtils.clamp(speed/1.8,.7,1.5);for(const name of ['Walk','Backward','Left','Right'])actions[name]?.setEffectiveTimeScale(walkRate);
       mixer.update(dt);lastState=current;root.updateMatrixWorld(true);
-      rifle.visible=armed&&current!=='Death'&&current!=='Crouch';
+      const canHold=!['Death','Downed','Swim','Fall'].includes(current);
+      rifle.visible=armed&&canHold;
+      rod.visible=fishing&&canHold;
+      if(rod.visible){bones.RightHand.getWorldPosition(right);root.worldToLocal(right);rod.position.copy(right);rod.rotation.set(0,-.28,0);}
       if(rifle.visible){
         bones.RightHand.getWorldPosition(right);bones.LeftHand.getWorldPosition(left);root.worldToLocal(right);root.worldToLocal(left);direction.copy(left).sub(right);
         const yaw=Math.atan2(direction.y,direction.x),pitch=Math.atan2(direction.z,Math.hypot(direction.x,direction.y))-Math.atan2(.04,.32);

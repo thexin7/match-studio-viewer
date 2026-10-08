@@ -10,8 +10,8 @@ const renderer=new THREE.WebGLRenderer({canvas:document.querySelector('canvas'),
 const scene=new THREE.Scene();scene.background=new THREE.Color('#101722');const camera=new THREE.PerspectiveCamera(35,innerWidth/innerHeight,.05,100);camera.position.set(2.8,1.8,4.4);const controls=new OrbitControls(camera,renderer.domElement);controls.target.set(0,.9,0);controls.update();
 scene.add(new THREE.HemisphereLight(0xc7dcff,0x36342b,2));const key=new THREE.DirectionalLight(0xffedda,3);key.position.set(3,5,4);key.castShadow=true;key.shadow.mapSize.set(2048,2048);scene.add(key);const rim=new THREE.DirectionalLight(0x739cdb,2.2);rim.position.set(-3,3,-2);scene.add(rim);
 const floor=new THREE.Mesh(new THREE.PlaneGeometry(40,40),new THREE.MeshStandardMaterial({color:0x172232,roughness:1}));floor.rotation.x=-Math.PI/2;floor.receiveShadow=true;scene.add(floor);
-const {loadOperatorAsset,createRealisticOperator}=await import('/m3d/operator-model.js?v=1.1.0');
-const {OPERATOR_MODELS}=await import('/m3d/operator-catalog.js?v=1.1.0');
+const {loadOperatorAsset,createRealisticOperator}=await import('/m3d/operator-model.js?v=1.2.0');
+const {OPERATOR_MODELS}=await import('/m3d/operator-catalog.js?v=1.3.0');
 const hero=new URLSearchParams(location.search).get('hero')||'威龙';
 const desktop=new URLSearchParams(location.search).get('device')==='desktop';
 const sample=desktop?OPERATOR_MODELS[hero]?.desktop:OPERATOR_MODELS[hero];
@@ -22,11 +22,11 @@ if(!await loadOperatorAsset(sample))throw new Error('模型加载失败');
 const actor=createRealisticOperator(sample);if(desktop)actor.root.traverse(o=>{if(o.isMesh&&!o.userData.radarExcludeFromSsao)o.castShadow=true;});const stage=new THREE.Group();stage.rotation.x=-Math.PI/2;stage.add(actor.root);scene.add(stage);
 let preset='Idle',sim=0,last=performance.now();
 const source={key:'preview',weapon:'通用步枪',alive:true};
-const modes={Idle:['持枪站立',0],Walk:['行走',1.8],Run:['奔跑',4],Sprint:['冲刺',6],Left:['侧移',1.8],Crouch:['倒地示意',0],Death:['阵亡过渡',0],Relaxed:['空手',0]};
+const modes={Idle:['持枪站立',0],Walk:['行走',1.8],Run:['奔跑',4],Sprint:['冲刺',6],Left:['侧移',1.8],Crouch:['蹲伏',0],Downed:['倒地',0],Prone:['趴下',0],Swim:['游泳',1.2],SwimIdle:['浮水',0],Fall:['下落',0],Death:['阵亡过渡',0],Relaxed:['空手',0]};
 for(const [name,[label]]of Object.entries(modes)){const b=document.createElement('button');b.textContent=label;b.dataset.state=name;b.onclick=()=>{preset=name;for(const el of document.querySelectorAll('#actions button'))el.classList.toggle('on',el===b);};document.getElementById('actions').append(b);}
 document.getElementById('status').textContent='原版轮廓 · 无贴图 · 6 个色块 · 拖动旋转，滚轮缩放';
 window.operatorPreview={scene,model:actor.root,actor,renderer,camera,source,get preset(){return preset;}};
-function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;sim+=dt*modes[preset][1];source.dead=preset==='Death';source.alive=!source.dead;source.status_key=preset==='Crouch'?'down':null;source.weapon=preset==='Relaxed'?'空手':'通用步枪';
+function frame(now){const dt=Math.min(.1,(now-last)/1000);last=now;sim+=dt*modes[preset][1];source.dead=preset==='Death';source.alive=!source.dead;source.status_key=preset==='Downed'?'down':null;source.pose={movement:['Swim','SwimIdle'].includes(preset)?'swim':preset==='Fall'?'fall':'walk',crouched:preset==='Crouch',prone:preset==='Prone'};floor.visible=!['Swim','SwimIdle','Fall'].includes(preset);source.weapon=preset==='Relaxed'?'空手':'通用步枪';
 // Move the logical subject and camera together during animation sampling, then
 // return the display to the turntable origin so locomotion can be inspected in place.
 const axis=preset==='Left'?'y':'x';actor.root.position[axis]=sim;stage.updateMatrixWorld(true);const offset=new THREE.Vector3();actor.root.getWorldPosition(offset);camera.position.add(offset);actor.update(source,camera,now,0,desktop?'high':'performance');camera.position.sub(offset);actor.root.position.set(0,0,0);stage.updateMatrixWorld(true);controls.update();renderer.render(scene,camera);requestAnimationFrame(frame);}

@@ -24,3 +24,16 @@ export function createOperatorRifle(occludedMaterial) {
   return root;
 }
 export const RIFLE_RIGHT_GRIP = [-.02,0,-.07];
+
+let rodParts;
+export function createOperatorRod() {
+  if(!rodParts){
+    const blank=new THREE.CylinderGeometry(.004,.014,2.1,8).rotateZ(-Math.PI/2).translate(1.05,0,0);
+    const handle=new THREE.CylinderGeometry(.021,.021,.24,8).rotateZ(-Math.PI/2).translate(.06,0,0);
+    rodParts=[new THREE.Mesh(blank,new THREE.MeshStandardMaterial({color:0x35414a,roughness:.45})),
+      new THREE.Mesh(handle,new THREE.MeshStandardMaterial({color:0x77634b,roughness:1}))];
+  }
+  const root=new THREE.Group();
+  for(const part of rodParts)root.add(part.clone());
+  return root;
+}

@@ -11,7 +11,7 @@ import sys
 from PIL import Image
 
 folder = Path(sys.argv[1])
-files = [folder / (sys.argv[2] + '.glb')] if len(sys.argv) > 2 else sorted(folder.glob('88*.glb'))
+files = [folder / (sys.argv[2] + '.glb')] if len(sys.argv) > 2 else sorted([*folder.glob('88*.glb'), *folder.glob('ai-*.glb')])
 for path in files:
     raw = path.read_bytes(); size = struct.unpack_from('<I', raw, 12)[0]
     g = json.loads(raw[20:20+size]); data = bytearray(raw[28+size:])
@@ -27,7 +27,7 @@ for path in files:
             width = widths[acc['type']]; view = g['bufferViews'][acc['bufferView']]
             start = view.get('byteOffset',0)+acc.get('byteOffset',0); stride = view.get('byteStride',width*4)
             first = struct.unpack_from('<'+'f'*width, data, start)
-            static_pose = anim['name'] not in ['Walk', 'Run']
+            static_pose = anim['name'] == 'TPose'
             constant = static_pose or all(max(abs(a-b) for a,b in zip(first,struct.unpack_from('<'+'f'*width,data,start+i*stride))) < 1e-6 for i in range(1,acc['count']))
             if constant:
                 for role in ['input','output']:

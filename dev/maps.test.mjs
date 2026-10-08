@@ -4,7 +4,7 @@ import vm from 'node:vm';
 import test from 'node:test';
 import { loadMapPois, setCatalog, planeToWorld, worldToPlane } from '../m3d/poi-data.js';
 
-const html = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const html = fs.readFileSync(new URL('../ui/radar/app.js', import.meta.url), 'utf8');
 const catalog = JSON.parse(fs.readFileSync(new URL('../map_catalog.json', import.meta.url), 'utf8'));
 const manifest = JSON.parse(fs.readFileSync(new URL('../m3d/manifest.json', import.meta.url), 'utf8'));
 

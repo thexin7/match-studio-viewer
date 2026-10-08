@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { CHARACTER_ROOT_ABOVE_MESH_M } from './gateway-pose.js?v=1.4.0';
 
 /* 3D 战术 HUD —— 解决「第一视角看不到其他人相对位置」。
    =============================================================================
@@ -22,7 +23,7 @@ const _ndc = new THREE.Vector3();
 const _cssCache = new Map();
 const FONT_STACK = 'system-ui,"PingFang SC","Microsoft YaHei",sans-serif';
 const HEAD_ABOVE_CENTER_M = 1.05;   // 人物根节点是胶囊中心，头顶约在其上 0.9m，再留一点空
-const FOOT_BELOW_CENTER_M = 0.9;
+const FOOT_BELOW_CENTER_M = CHARACTER_ROOT_ABOVE_MESH_M;
 
 function css(hex) {
     let v = _cssCache.get(hex);
@@ -42,10 +43,37 @@ function lighten(hexCss) {
     return v;
 }
 
+function placeFarLabel(x, y, width, height, placed, viewportW, viewportH) {
+    const w = Math.min(width, viewportW - 8), h = height;
+    const left = Math.max(4, Math.min(viewportW - w - 4, x - w / 2));
+    const initial = Math.max(4, Math.min(viewportH - h - 4, y - h));
+    let top = initial;
+    for (let step = 0; step <= placed.length * 2 + 2; step++) {
+        const offset = Math.ceil(step / 2) * (h + 4) * (step % 2 ? -1 : 1);
+        top = initial + offset;
+        if (top < 4 || top + h > viewportH - 4) continue;
+        if (!placed.some(r => left < r.x + r.w + 3 && left + w + 3 > r.x && top < r.y + r.h + 3 && top + h + 3 > r.y)) break;
+    }
+    const result = { x:left, y:Math.max(4,Math.min(viewportH-h-4,top)), w, h };
+    placed.push(result);return result;
+}
+
+// 手机竖屏远距名牌文字的数量上限；排序：贴脸 > 敌人 > 实时位置 > 距离近
+const FAR_TEXT_BUDGET_NARROW = 6;
+const _farRank = [];
+function rankFarText(items, count, budget) {
+    _farRank.length = 0;
+    for (let i = 0; i < count; i++) { const it = items[i]; it.textOk = false; if (it.far && it.text) _farRank.push(it); }
+    _farRank.sort((a, b) => (b.alert - a.alert) || (b.enemy - a.enemy) || (a.stale - b.stale) || ((a.dist ?? 1e9) - (b.dist ?? 1e9)));
+    for (let i = 0; i < _farRank.length && i < budget; i++) _farRank[i].textOk = true;
+    _farRank.length = 0;
+}
+
 export function createHud(canvas) {
     const ctx = canvas.getContext('2d');
     let cssW = 0, cssH = 0, dpr = 1, dirty = false;
     const arrows = [];
+    const farLabels = [];
     const placed = [];
     const proj = { on: false, front: false, sx: 0, sy: 0, cx: 0, cy: 0 };
     // 雷达画布与 HUD 同级：位置交给 CSS 媒体查询，避开小地图、回放条、相机条与快捷条
@@ -134,6 +162,10 @@ export function createHud(canvas) {
         const rd = extra?.radar;
         drawRadar(camera, rd && rd.on ? rd : null, items, count, extra?.pois, poiCount, opt, pulse);
         if (!count && !poiCount) return;
+        // 窄屏（手机竖屏）远距名牌文字容易互相压住：只给最重要的若干个写名字和距离，
+        // 其余仍保留朝下标识和血条，血量不因密度控制而消失。
+        const textBudget = cssW < 600 ? FAR_TEXT_BUDGET_NARROW : Infinity;
+        if (textBudget !== Infinity) rankFarText(items, count, textBudget);
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         ctx.lineJoin = 'round';
         ctx.textAlign = 'center';
@@ -142,11 +174,12 @@ export function createHud(canvas) {
         if (poiCount) drawPois(camera, extra.pois, poiCount, fs);
         const alertCss = css(opt.alertColor), downCss = css(opt.downColor);
         arrows.length = 0;
+        farLabels.length = 0;
 
         for (let i = 0; i < count; i++) {
             const it = items[i];
             const scale = it.scale || 1;
-            const p = project(camera, it.x, it.y, it.z + HEAD_ABOVE_CENTER_M * scale);
+            const p = project(camera, it.x, it.y, it.z - FOOT_BELOW_CENTER_M + (FOOT_BELOW_CENTER_M+HEAD_ABOVE_CENTER_M+(it.headDelta||0)) * scale);
             const color = it.alert ? alertCss : css(it.color);
             if (!p.on) {
                 if (it.enemy && opt.warn && !it.spawn && it.dist != null && it.dist <= opt.warnD) {
@@ -160,7 +193,7 @@ export function createHud(canvas) {
             dirty = true;
 
             if (opt.box && (it.enemy || it.alert)) {
-                const foot = project(camera, it.x, it.y, it.z - FOOT_BELOW_CENTER_M * scale);
+                const foot = project(camera, it.x, it.y, it.z - FOOT_BELOW_CENTER_M);
                 if (foot.front) {
                     ctx.lineWidth = it.alert ? 2 : 1.4;
                     ctx.globalAlpha = it.stale ? 0.4 : 0.95;
@@ -207,28 +240,39 @@ export function createHud(canvas) {
                 top = hy - 7 * fs;
             }
 
+            let labelX = hx;
+            const farText = it.far && it.text && (textBudget === Infinity || it.textOk) ? it.text : '';
+            if (farText) {
+                ctx.font = `600 ${Math.round(11 * fs)}px ${FONT_STACK}`;
+                const rect = placeFarLabel(hx, top, ctx.measureText(farText).width + 12, 28 * fs, farLabels, cssW, cssH);
+                labelX = rect.x + rect.w / 2;top = rect.y + rect.h;
+                ctx.strokeStyle = color;ctx.lineWidth = .7;ctx.globalAlpha = .5;
+                ctx.beginPath();ctx.moveTo(hx, hy);ctx.lineTo(labelX, top);ctx.stroke();ctx.globalAlpha = 1;
+                ctx.fillStyle = 'rgba(6,9,14,.72)';ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+            }
             // 远距离名牌的细血条：与 2D 同一套阈值配色
             if (it.far && it.hp != null) {
                 const w = 28 * fs, h = Math.max(2, 3 * fs), y = top - 3 * fs - h;
                 ctx.globalAlpha = it.stale ? 0.5 : 1;
                 ctx.fillStyle = 'rgba(6,8,14,.8)';
-                ctx.fillRect(hx - w / 2 - 1, y - 1, w + 2, h + 2);
+                ctx.fillRect(labelX - w / 2 - 1, y - 1, w + 2, h + 2);
                 ctx.fillStyle = it.hp > 0.66 ? '#37e08a' : it.hp > 0.33 ? '#ffcf4d' : '#ff5f6d';
-                ctx.fillRect(hx - w / 2, y, w * it.hp, h);
+                ctx.fillRect(labelX - w / 2, y, w * it.hp, h);
                 ctx.globalAlpha = 1;
                 top = y - 1;
             }
 
             // 文字：远距离时 3D 信息卡隐藏，由这里给出「名字 距离」；近处贴脸只补距离
             let txt = '';
-            if (it.far) txt = it.text || '';
+            // 密度控制省略名字时，没有比例血条的目标仍写出血量数值（上限未知 / 血量未知）
+            if (it.far) txt = farText || (it.hp == null ? (it.hpText || '') : '');
             else if (it.alert && it.dist != null) txt = Math.round(it.dist) + 'm';
             if (it.down && it.enemy) txt = txt ? '倒地 · ' + txt : '倒地';
             if (txt) {
                 ctx.lineWidth = 3;
                 ctx.strokeStyle = 'rgba(0,0,0,.82)';
                 ctx.globalAlpha = it.stale ? 0.5 : 1;
-                label(txt, hx, top - 8 * fs, it.alert ? alertCss : it.down ? downCss : css(it.color), Math.round(11 * fs));
+                label(txt, labelX, top - 8 * fs, it.alert ? alertCss : it.down ? downCss : css(it.color), Math.round(11 * fs));
                 ctx.globalAlpha = 1;
             }
         }

@@ -2,189 +2,686 @@
 export const OPERATOR_MODELS = Object.freeze({
   "红狼": {
     "id": "88000000030",
-    "src": "/ui/models/operator/88000000030.glb?v=cc8e5ccee4fe",
+    "src": "/ui/models/operator/88000000030.glb?v=123957865fdf",
     "native": true,
     "desktop": {
       "id": "88000000030",
-      "src": "/ui/models/operator/88000000030.desktop.glb?v=a0799b763c0e",
+      "src": "/ui/models/operator/88000000030.desktop.glb?v=30e777d97323",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "露娜": {
     "id": "88000000028",
-    "src": "/ui/models/operator/88000000028.glb?v=24c14c3d2d20",
+    "src": "/ui/models/operator/88000000028.glb?v=573ef3c16947",
     "native": true,
     "desktop": {
       "id": "88000000028",
-      "src": "/ui/models/operator/88000000028.desktop.glb?v=9887f7afe244",
+      "src": "/ui/models/operator/88000000028.desktop.glb?v=c28210a99d69",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "牧羊人": {
     "id": "88000000029",
-    "src": "/ui/models/operator/88000000029.glb?v=9e482c611e50",
+    "src": "/ui/models/operator/88000000029.glb?v=fef1182ee11a",
     "native": true,
     "desktop": {
       "id": "88000000029",
-      "src": "/ui/models/operator/88000000029.desktop.glb?v=8ecfd7388a67",
+      "src": "/ui/models/operator/88000000029.desktop.glb?v=80d32fbf2b64",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "蜂医": {
     "id": "88000000027",
-    "src": "/ui/models/operator/88000000027.glb?v=fa9a376496fd",
+    "src": "/ui/models/operator/88000000027.glb?v=a923ca2ed293",
     "native": true,
     "desktop": {
       "id": "88000000027",
-      "src": "/ui/models/operator/88000000027.desktop.glb?v=23c101e41dee",
+      "src": "/ui/models/operator/88000000027.desktop.glb?v=d1de0c2db458",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "威龙": {
     "id": "88000000025",
-    "src": "/ui/models/operator/88000000025.glb?v=eb2640fc1b05",
+    "src": "/ui/models/operator/88000000025.glb?v=5fd2803dc2b6",
     "native": true,
     "desktop": {
       "id": "88000000025",
-      "src": "/ui/models/operator/88000000025.desktop.glb?v=a6f77c0fcceb",
+      "src": "/ui/models/operator/88000000025.desktop.glb?v=44c10f3a8d1c",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "骇爪": {
     "id": "88000000026",
-    "src": "/ui/models/operator/88000000026.glb?v=8dea6c4ef3e0",
+    "src": "/ui/models/operator/88000000026.glb?v=0fe2be68a4db",
     "native": true,
     "desktop": {
       "id": "88000000026",
-      "src": "/ui/models/operator/88000000026.desktop.glb?v=7c1011c61da7",
+      "src": "/ui/models/operator/88000000026.desktop.glb?v=414cbcac90ed",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "乌鲁鲁": {
     "id": "88000000035",
-    "src": "/ui/models/operator/88000000035.glb?v=623353e200a8",
+    "src": "/ui/models/operator/88000000035.glb?v=5411446a66dc",
     "native": true,
     "desktop": {
       "id": "88000000035",
-      "src": "/ui/models/operator/88000000035.desktop.glb?v=f2f2b8a6f3b2",
+      "src": "/ui/models/operator/88000000035.desktop.glb?v=3ebec88e42f4",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "蛊": {
     "id": "88000000036",
-    "src": "/ui/models/operator/88000000036.glb?v=8ec5b3183948",
+    "src": "/ui/models/operator/88000000036.glb?v=636da2f741aa",
     "native": true,
     "desktop": {
       "id": "88000000036",
-      "src": "/ui/models/operator/88000000036.desktop.glb?v=e1fa2eaaaf1c",
+      "src": "/ui/models/operator/88000000036.desktop.glb?v=7961d79e8329",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "深蓝": {
     "id": "88000000037",
-    "src": "/ui/models/operator/88000000037.glb?v=db10e99d9cfe",
+    "src": "/ui/models/operator/88000000037.glb?v=8402fb2b27b2",
     "native": true,
     "desktop": {
       "id": "88000000037",
-      "src": "/ui/models/operator/88000000037.desktop.glb?v=1bf099d29ba2",
+      "src": "/ui/models/operator/88000000037.desktop.glb?v=6d44bb6be743",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "无名": {
     "id": "88000000038",
-    "src": "/ui/models/operator/88000000038.glb?v=9400891cfbf9",
+    "src": "/ui/models/operator/88000000038.glb?v=9d6a35793047",
     "native": true,
     "desktop": {
       "id": "88000000038",
-      "src": "/ui/models/operator/88000000038.desktop.glb?v=44d6602acfaf",
+      "src": "/ui/models/operator/88000000038.desktop.glb?v=8695857ba8fd",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "疾风": {
     "id": "88000000039",
-    "src": "/ui/models/operator/88000000039.glb?v=f5b99385d2f9",
+    "src": "/ui/models/operator/88000000039.glb?v=15b2e43fe744",
     "native": true,
     "desktop": {
       "id": "88000000039",
-      "src": "/ui/models/operator/88000000039.desktop.glb?v=69b82f065d17",
+      "src": "/ui/models/operator/88000000039.desktop.glb?v=12fe85a3141f",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "银翼": {
     "id": "88000000040",
-    "src": "/ui/models/operator/88000000040.glb?v=287c093a65b7",
+    "src": "/ui/models/operator/88000000040.glb?v=82d72784774b",
     "native": true,
     "desktop": {
       "id": "88000000040",
-      "src": "/ui/models/operator/88000000040.desktop.glb?v=09ad8e7a3b37",
+      "src": "/ui/models/operator/88000000040.desktop.glb?v=1c435e3da26e",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "比特": {
     "id": "88000000041",
-    "src": "/ui/models/operator/88000000041.glb?v=17d3824e3d3d",
+    "src": "/ui/models/operator/88000000041.glb?v=f03c9144eada",
     "native": true,
     "desktop": {
       "id": "88000000041",
-      "src": "/ui/models/operator/88000000041.desktop.glb?v=12682e27cb55",
+      "src": "/ui/models/operator/88000000041.desktop.glb?v=ebce62bd7a75",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "蝶": {
     "id": "88000000045",
-    "src": "/ui/models/operator/88000000045.glb?v=6cf709b10887",
+    "src": "/ui/models/operator/88000000045.glb?v=dd0c64ac8532",
     "native": true,
     "desktop": {
       "id": "88000000045",
-      "src": "/ui/models/operator/88000000045.desktop.glb?v=571214690119",
+      "src": "/ui/models/operator/88000000045.desktop.glb?v=45a8b22f71d0",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "回响": {
     "id": "88000000046",
-    "src": "/ui/models/operator/88000000046.glb?v=f0eabf6cba18",
+    "src": "/ui/models/operator/88000000046.glb?v=19e2a64c371b",
     "native": true,
     "desktop": {
       "id": "88000000046",
-      "src": "/ui/models/operator/88000000046.desktop.glb?v=3aece1c4640e",
+      "src": "/ui/models/operator/88000000046.desktop.glb?v=c1c90cb3f4da",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "液氮": {
     "id": "88000000047",
-    "src": "/ui/models/operator/88000000047.glb?v=471d26c70f53",
+    "src": "/ui/models/operator/88000000047.glb?v=d88fbddd3108",
     "native": true,
     "desktop": {
       "id": "88000000047",
-      "src": "/ui/models/operator/88000000047.desktop.glb?v=9ff85aa59ef9",
+      "src": "/ui/models/operator/88000000047.desktop.glb?v=cb7acec24b12",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   },
   "旅人": {
     "id": "88000000051",
-    "src": "/ui/models/operator/88000000051.glb?v=25d587df8d5f",
+    "src": "/ui/models/operator/88000000051.glb?v=b6efa58141a5",
     "native": true,
     "desktop": {
       "id": "88000000051",
-      "src": "/ui/models/operator/88000000051.desktop.glb?v=b0546d95d50a",
+      "src": "/ui/models/operator/88000000051.desktop.glb?v=d4bd07762922",
       "native": true,
       "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
+    }
+  },
+  "AI通用步兵": {
+    "id": "ai-soldier",
+    "src": "/ui/models/operator/ai-soldier.glb?v=e3eae65b0510",
+    "native": true,
+    "desktop": {
+      "id": "ai-soldier",
+      "src": "/ui/models/operator/ai-soldier.desktop.glb?v=ade185deb274",
+      "native": true,
+      "isDesktop": true
+    },
+    "headOffsets": {
+      "Crouch": [
+        0.073,
+        -0.066,
+        -0.473
+      ],
+      "Prone": [
+        0.398,
+        -0.108,
+        -1.144
+      ],
+      "Swim": [
+        0.386,
+        0.018,
+        -1.15
+      ],
+      "SwimIdle": [
+        -0.114,
+        0.026,
+        -1.108
+      ],
+      "Downed": [
+        -0.683,
+        0.14,
+        -1.003
+      ]
     }
   }
 });

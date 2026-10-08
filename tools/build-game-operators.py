@@ -115,7 +115,7 @@ for folder in folders:
     if rig.animation_data:
         rig.animation_data.action=None
         for track in list(rig.animation_data.nla_tracks):
-            if track.name not in ['TPose','Idle','Walk','Run','Crouch','Death','Relaxed']:
+            if track.name not in ['TPose','Idle','Walk','Run','Left','Right','Backward','Sprint','Crouch','Downed','Prone','Swim','SwimIdle','Fall','Death','Relaxed']:
                 rig.animation_data.nla_tracks.remove(track)
     rig.data.pose_position='POSE'
     for obj in bpy.context.scene.objects:obj.select_set(obj in [high,low,rig])

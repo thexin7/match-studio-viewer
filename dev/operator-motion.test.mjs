@@ -12,11 +12,19 @@ test('movement blending preserves a unit total and supports backward and lateral
 });
 test('death and downed states take precedence over estimated locomotion',()=>{
   assert.equal(operatorState({dead:true,status_key:'down'}),'Death');
-  assert.equal(operatorState({status_key:'dying'}),'Crouch');
+  assert.equal(operatorState({status_key:'dying'}),'Downed');
   assert.equal(operatorState({weapon:'UZI'}),'moving');
 });
+
+test('replicated swimming, crouching and prone poses override speed-based walking',()=>{
+  assert.equal(operatorState({pose:{movement:'swim',crouched:true}}),'Swim');
+  assert.equal(operatorState({pose:{prone:true}}),'Prone');
+  assert.equal(operatorState({pose:{crouched:true}}),'Crouch');
+  assert.equal(operatorState({pose:{movement:'fall'}}),'Fall');
+  assert.equal(operatorState({life_state:'downed',pose:{movement:'swim'}}),'Downed');
+});
 test('unknown and empty hands do not fabricate a held rifle',()=>{
-  for(const weapon of [null,undefined,'','空手','未知武器'])assert.equal(hasHeldWeapon({weapon}),false);
+  for(const weapon of [null,undefined,'','空手','未知武器','武器 18300000004','台钓竿','战术匕首','进攻型破片手雷M67'])assert.equal(hasHeldWeapon({weapon}),false);
   assert.equal(hasHeldWeapon({weapon:'M4A1'}),true);
 });
 test('distant animation is throttled while nearby and changed states remain responsive',()=>{

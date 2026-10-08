@@ -1,49 +1,87 @@
-# Match Studio Viewer
+# Nova 实时雷达（前端）
 
-浏览器端**战术比赛回放查看器**，适用于撤离类 FPS。在 2D 态势地图上展示会话遥测，可选 Three.js 3D 场景、干员列表、物资图层与回放控制条。
+浏览器端**实时雷达**：在对局进行中查看自己、队友、敌方目标与 AI 的位置、方向、高差、距离和血量，查看当前装备与已确认状态，筛选物资、容器和死亡盒，并在 2D 与 3D（自由 / 俯视 / 第一跟随 / 第三跟随）之间切换。
 
-面向训练室复盘、导播叠加层、Demo 分析等场景。
+产品只提供实时雷达：没有播放、暂停、倍速、时间轴、录像、历史对局、战报或导播入口。服务端处于回放等非实时状态时，页面标注「非实时数据 · 不是当前对局」，不提供回放控制。
 
 ## 功能
 
-- **2D 态势地图** — Leaflet 瓦片、平滑标记、队伍色、距离环
-- **3D 场景**（需地形 GLB）— 自由 / 俯视 / 跟随相机
-- **干员台** — 按队伍与威胁距离分组
-- **物资与容器** — 可过滤的地图图层与品质着色
-- **回放模式** — 播放、暂停、跳转、倍速
-- **移动端** — 可折叠抽屉、大触控区域
+- **实时状态**：连接中 / 等待对局 / 实时 / 数据停滞 / 连接异常 / 非实时数据六态，按请求结果、`live_active`、`status` 原值和快照内容变化判定；停滞和异常时画面降亮并注明「不是当前位置」。
+- **2D 态势图**：Leaflet 瓦片、平滑标记、阵营色（友军绿、敌方红）、朝向锥与枪线、贴脸警戒圈、点位分级显示；实时位置、最后位置、出生点在视觉上区分。
+- **目标 / 物资面板**：按我方、敌方各队、未知身份、AI 分组或按距离排序；每行给出当前武器、护具、血量（上限未知时只显示数值）、距离、高差与相对方位。物资页按类型、品质、距离 / 价值 / 品质筛选排序，死亡盒显示同步到的清单。
+- **3D 场景**（需地形资产）：白模地形、干员模型、远近血量、屏外预警、朝向雷达；第一跟随底部观察条显示跟随对象的血量、当前装备、姿态与朝向时效。地形加载失败给出原因、重试与回到 2D。
+- **手机**（≤ 760px）：单行顶栏、自己条 / 相机模式行、三档底部抽屉（收起 / 半展开 / 全屏）、44 px 浮动按钮、底部弹层式设置。
+- **地图选择**：本人坐标落在唯一地图内即确认；本人位置缺失时用多数人物坐标推断；都没有时写明「未确认 · 沿用上次选择」。手动选择只覆盖当前会话。
 
 ## 快速开始
-
-在任意目录克隆本仓库即可：
 
 ```bash
 git clone https://github.com/thexin7/match-studio-viewer.git
 cd match-studio-viewer
-npm run dev
+npm run dev          # http://127.0.0.1:5173
 ```
 
-打开 [http://127.0.0.1:5173](http://127.0.0.1:5173)。内置开发服务器用 `dev/fixtures/` 模拟全部 `/api/*`，**无需任何外部服务**。
-
-### 3D 地形模型
-
-6 张地图的白模 GLB（约 380 MB）位于 `m3d/`，与 `manifest.json` 配套。文件在 `.gitignore` 中，完整开发环境需本地具备这些资产；无 GLB 时 2D 仍可用。
-
-地图目录包含零号大坝、长弓溪谷、航天基地、巴克什、潮汐监狱和 AZ3。功能台的「切换地图」及移动端底栏的「地图」入口共用同一目录，切换时同时更新 2D 底图、3D 地形和点位。
-
-六张地图均有目录点位；目前只有零号大坝另有按难度划分的点位数据，其他地图使用各自目录中的撤离点和容器，不套用大坝难度数据。
-
-多地图验证（需要对应地形资产，`--url` 指向待测服务）：
+内置开发服务器提供**测试数据**（页面会显示「测试数据」横幅），只能验证界面表达，不能作为实时对局验收证据：
 
 ```bash
-node --test dev/maps.test.mjs dev/poll.test.mjs dev/quality.test.mjs dev/smoke.test.mjs
-node dev/poi-check.mjs
-node dev/smoke.mjs --url http://127.0.0.1:5173/ --map az3 --quality perf --size 390x844
+node dev/server.mjs --scenario live      # 默认：实时，20 Hz 快照，人物按确定性轨迹移动
+node dev/server.mjs --scenario waiting   # 服务在线但没有对局
+node dev/server.mjs --scenario stalled   # 实时数据冻结
+node dev/server.mjs --scenario error     # /api/state 返回 503
+node dev/server.mjs --scenario noself    # 本人坐标缺失
+node dev/server.mjs --scenario nonlive   # 服务端处于回放
+node dev/server.mjs --no-terrain         # 地形 404，验证 3D 失败与重试
+node dev/server.mjs --port 5181 --upstream http://127.0.0.1:17912   # 用新界面看真实后端数据（只读转发）
 ```
+
+运行中也可以切换：`GET /__dev/scenario?set=<情景>&terrain=0|1&session=<N>&map=<地图>`（`session` 模拟新会话，`map` 把样例平移到指定地图）。
+
+## 测试与验收
+
+```bash
+npm test                                                       # 单元 / 回归测试（node:test）
+node dev/states-smoke.mjs --url http://127.0.0.1:5173/         # 六种状态、本人位置缺失、3D 跟随与失败重试、新会话切图、面板与弹层；桌面 + 390px 手机
+node dev/live-check.mjs --url <地址> --3d --hardware            # 状态时间线、错误、脚本/布局耗时、长任务、帧间隔、网络量、绘制次数
+node dev/live-check.mjs --url <地址> --soak 7 --hardware        # 长时间切图与进出 3D，记录内存、DOM、监听器与 3D 资源
+node dev/live-check.mjs --url <地址> --3d --hardware --trace     # 加录 Chrome trace：各线程忙碌时间、主线程事件耗时
+node dev/fpv-check.mjs --url <地址> --hardware                  # 第一视角 / 第三跟随逐帧平滑度（速度、转向波动与停顿帧）
+node dev/smoke.mjs --url http://127.0.0.1:5173/ --size 390x844  # 2D / 3D 冒烟
+```
+
+验收脚本默认使用 SwiftShader 软件渲染，帧率不代表真实 GPU；加 `--hardware` 走默认 GPU 路径。实时对局的验收必须在真实后端 `live_active=true` 时进行。
+
+## 数据流
+
+```
+浏览器 ──轮询──▶ GET /api/state    当前快照（内容签名去掉随墙钟增长的年龄字段；不变即跳过，按快照间隔自适应）
+         │       GET /api/status   只在打开「数据状态」详情时每秒读取
+         │       GET /api/map      启动时读取地图目录
+         └─静态─▶ index.html、ui/、m3d/、vendor/、avatars/、resources/
+```
+
+本仓库只包含浏览器客户端。任何在同源实现上述只读接口的数据源都可以驱动此 UI；字段契约与表达规则见 [AGENTS.md](./AGENTS.md)。
+
+## 数据表达
+
+- 界面上的计数是**当前快照里已知的目标**，不是全场人数。
+- 血量 `hp.total=[当前, 上限]`：上限未知显示 `95/?` 且不画比例；`hp=null` 显示「血量未知」，与 0 血分开。
+- 当前武器只认 `curr_weapon` 的解析结果；`weapon` 是出生携带，只在详情中作为「初始武器」出现。未解析时不放枪。
+- 出生点处的 AI 显示出生点与年龄，不做移动插值、不触发贴脸、不计入最近实时敌人。
+- 状态里的时间是客户端计时，不代表游戏网络延迟。
+
+## 实时跟随与血量
+
+第一视角的视线（上行位置 + 瞄准朝向）与身体走同一条按快照时间戳插值的时间线，跑跳时连续平滑，代价是比最新快照晚约一个快照间隔显示；视模晃动只按水平速度，腾空时收回并带竖直惯性。位置先按 `position_origin` 区分网格与胶囊根基准，再按基准眼高和原生动作的头高差定位，上行根坐标不是眼睛坐标。瞄准年龄超过 250 ms 时回落到身体朝向并明示「瞄准过期」；跟随他人时只有水平朝向。眼高是估算，不等同游戏摄像机。MP5 使用原生部件外观，匕首使用原生网格；其余枪械和手臂为通用示意，附件、皮肤、开火、后坐力与换弹动作没有同步。
+
+解析出的姿态字段驱动游泳、蹲伏、趴下和下落；倒地独立处理。AI 使用通用步兵模型，位置时效标记保留。自动帧率为电脑实时 60 FPS、手机或无人物场景 30 FPS；隐藏页面停止 3D 工作，仍可手动选择更高帧率。
+
+## 3D 地形模型
+
+6 张地图的白模 GLB（约 380 MB）位于 `m3d/`，与 `manifest.json` 配套，在 `.gitignore` 中；无 GLB 时 2D 仍可用。地图目录包含零号大坝、长弓溪谷、航天基地、巴克什、潮汐监狱和 AZ3。只有零号大坝另有按难度划分的点位数据。
 
 ### 路由器部署的轻量地形
 
-模型处理只在开发机执行。路由器继续提供静态文件，不需要 Node.js、WASM 简化器或新的服务。
+模型处理只在开发机执行；路由器继续提供静态文件，不需要 Node.js、WASM 简化器或新服务。
 
 ```bash
 npm ci
@@ -52,17 +90,11 @@ node tools/terrain-pack/light.mjs --all
 node --test dev/terrain-light.test.mjs
 ```
 
-`validate.mjs` 使用 Khronos glTF-Validator，发现错误时退出码为 1。现有原始 GLB 的 int16 POSITION 存在 4 字节对齐规范问题；报告不会静默忽略这些错误。该校验不判断地形拼接的视觉质量。
+`validate.mjs` 使用 Khronos glTF-Validator，发现错误时退出码为 1。`light.mjs` 使用固定版本 meshoptimizer 离线生成 `packed_light`：锁定拓扑边界，以 50% 面数为目标、0.05 米算法误差为上限，同时考虑 AO / 天空可见度属性；每个产物都用浏览器解码器回读核对。自动、流畅、平衡档优先使用版本匹配的轻量包，高清档使用完整包；轻量包失败依次尝试完整 TPK 和原始 GLB。
 
-`light.mjs` 使用固定版本 meshoptimizer 离线生成 `packed_light`：锁定拓扑边界，以 50% 面数为目标、0.05 米算法误差为上限，同时考虑 AO/天空可见度属性。保留的顶点坐标不移动，烘焙数据随顶点重排；每个产物都用浏览器解码器回读核对。受边界和属性约束，实际面数不保证达到 50%。
+### 地形接缝修复
 
-自动、流畅、平衡档优先使用版本匹配的轻量包；高清档使用完整包。轻量包下载失败会依次尝试完整 TPK 和原始 GLB。更换 GLB 或重新烘焙后，需要重新生成轻量包。原始 GLB、完整包均保留；轻量处理不会自动修复原地形中的拼接接缝。
-
-## 地形接缝修复与加载优化
-
-2026-10-07 核对发现，五张地图的原始 GLB 内 64×64、间距 2 米的高度网格存在 XY 行列转置。以大坝为例，5,143 个共享边界点的高度差中位数为 16.94 米，最大 117.59 米；转置恢复后最大差为 0.00129 米。完整 TPK 编码与运行时切块此前并未丢失三角形，问题来自源几何的高度网格方向。
-
-`tools/terrain-pack/repair.mjs` 只识别并修复规则高度网格，建筑几何与人物世界坐标保持原有语义。原 GLB 留存，新 GLB 使用独立文件名；manifest 的 `terrain_source` 保存原文件和版本，`terrain_repair` 保存修复前后统计。行列恢复后，同一高度网格采样点的小范围残余断差可做边界焊接，超过 0.75 米不自动焊接；长弓溪谷最大单点调整约 0.317 米。巴克什已有边界连续，不应用转置。
+2026-10-07 核对发现，五张地图原始 GLB 内 64×64、间距 2 米的高度网格存在 XY 行列转置（以大坝为例，共享边界点高度差中位数 16.94 米、最大 117.59 米；转置恢复后最大差 0.00129 米）。`tools/terrain-pack/repair.mjs` 只识别并修复规则高度网格，建筑几何与人物世界坐标保持原有语义；原 GLB 留存，新 GLB 使用独立文件名，manifest 的 `terrain_source` / `terrain_repair` 记录来源与修复统计。
 
 | 地图 | 修复前共享边界最大高差 | 修复后 |
 |---|---:|---:|
@@ -72,8 +104,6 @@ node --test dev/terrain-light.test.mjs
 | 潮汐监狱 | 99.031 m | 0.00200 m |
 | 航天基地 | 40.674 m | 0.00139 m |
 
-重建流程（单图示例）：
-
 ```bash
 node tools/terrain-pack/repair.mjs daba
 node tools/terrain-pack/cli.mjs daba --threads 12
@@ -81,67 +111,13 @@ node tools/terrain-pack/light.mjs daba
 node --test dev/terrain-seams.test.mjs dev/terrain-worker.test.mjs dev/terrain-bake.test.mjs dev/terrain-light.test.mjs
 ```
 
-先修复 GLB，再重建 AO/天空可见度和轻量包；旧烘焙不能套用到已移动的地形上。修复 GLB 使用 8 字节步长存放 int16 VEC3，浏览器 GLB 回退与离线读取器均支持该对齐方式。五份修复 GLB 通过 Khronos 验证，无错误或警告；原始源文件的已知格式问题仍由原文件保留。
-
-浏览器现在将 TPK 下载、解压和解码放在 module Worker，结果以可转移缓冲区交给主线程。换地图时终止旧解码任务；Worker 不可用时保留直接解码，轻量包失败仍回退完整包和 GLB。离线烘焙改为按小批次分配工作，避免密集区域集中在少数线程；同一大坝输入和参数下，调整前后生成的完整 TPK 哈希一致。
-
-硬件路径冒烟可使用 `node dev/smoke.mjs --url http://127.0.0.1:5173/ --hardware`。默认冒烟仍强制 SwiftShader，不能把它的 FPS 当成真实 GPU 性能。地形接缝通过不等于每个游戏姿态的脚底高度都已验收；本次没有通过修改人物 Z 或吸附地面掩盖原始坐标差异。
-
-## 导播控制台与透明叠加层
-
-打开 `/studio` 使用 G 风格的导播控制台。原查看器 `/` 保留地图主界面，并提供控制台入口。
-
-- 控制台支持观察对象、最近对手、2D / 3D 和相机模式、已有显示设置及回放控制。
-- `/overlay?transparent=1` 是 OBS 浏览器源地址；`transparent=0` 显示检查透明区域的棋盘格。
-- 角落、底栏、全屏地图使用 1920×1080；竖屏使用 1080×1920。切换横竖屏后，需要在 OBS 浏览器源属性中修改宽高。
-- `/overlay/status`、`/overlay/alert`、`/overlay/radar`、`/overlay/threats`、`/overlay/observer`、`/overlay/ticker`、`/overlay/minimap` 可分别作为独立组件源。控制台可复制地址，并显示所需尺寸。
-- 地址省略 `layout` 时跟随控制台；也可通过 `layout=corner|bar|vertical|map` 固定某个源的布局。
-
-页面只显示接口中已有的数据。距离按 UE 厘米换算；方位相对于观察对象的朝向，缺少朝向时显示未知。附近对手按已有队伍信息区分；观察对象消失或数据断开后清空旧信息。接近提醒来自连续快照中的距离变化，回放跳转会重置提醒历史。人数表示已识别单位，不代表全场存活总人数。
-
-本版没有 OBS 场景遥控、录制高光、后台全局热键、击杀播报和墙后判定。热键仅在控制台获得焦点时生效，输入控件保留原有按键行为。提示音需先在控制台手动开启。
-
-宿主需实现 `GET/HEAD/POST /api/studio`：GET 返回带 `revision` 的共享控制状态和 `has3d` 能力；POST 提交 `revision` 与要变更的字段，版本冲突返回 409，无效字段返回 400。`prefs` 按字段合并。浏览器串行提交，并在一次版本冲突后读取新状态重试。设置保存在宿主当前进程会话中，重启宿主后重置；原查看器的本地偏好仍保留。不同浏览器/OBS 配置可共用控制状态，嵌入预览不会覆盖普通查看器的本地偏好。
-
-独立开发服务器提供同样的共享控制接口。浏览器联调检查需要包含可用人物及附近对手的回放/样例数据：
-
-```bash
-node --test dev/studio.test.mjs dev/studio-api.test.mjs dev/maps.test.mjs dev/poll.test.mjs dev/quality.test.mjs dev/smoke.test.mjs
-node dev/studio-smoke.mjs http://127.0.0.1:5173
-```
-
-设计依据：[Figma G · OBS 叠加层](https://www.figma.com/design/LINb0twz3q3Ajdc7ZUG2C3?node-id=36-655)。实际采用 G3 的面板/控件视觉、G1 的横屏安全区和 G4 的竖屏布局；按现有数据能力删减功能。导出图标保存在 `ui/studio/assets/`，不依赖临时 Figma URL。
-
-## 数据流
-
-```
-浏览器 UI  ──轮询──▶  GET /api/state
-              │        GET /api/status
-              │        GET /api/map
-              └──静态──▶  index.html, ui/, m3d/, vendor/, avatars/
-```
-
-本仓库**只包含浏览器客户端**。任何在同源实现 `/api/*` 契约的数据源都可以驱动此 UI。
-
-## API 概览
-
-| 端点 | 作用 |
-|------|------|
-| `GET /api/state` | 当前比赛快照（实体、主视角、回放游标） |
-| `GET /api/status` | 会话 / 回放元数据 |
-| `GET /api/map` | 地图目录（边界、旋转、瓦片 URL） |
-| `GET /api/ctrl?pause=&seek=&speed=` | 回放控制（仅回放模式） |
-
-完整契约与重构说明见 [AGENTS.md](./AGENTS.md)。
+浏览器把 TPK 下载、解压和解码放在 module Worker，换地图时终止旧任务；Worker 不可用时保留直接解码。地形接缝通过不等于每个游戏姿态的脚底高度都已验收；没有通过修改人物 Z 或吸附地面掩盖原始坐标差异。
 
 ## 技术栈
 
-3D 设置中的“渲染模式”支持手动选择手机（30 FPS、关闭建筑阴影）、电脑（60 FPS、较高细节）和均衡档。独立设备各自保存渲染偏好；控制台仍可调整 OBS 嵌入视图。人物采用按身份匹配的无贴图简化原模型，威龙保留头盔；资源预算与离线生成方法见 [干员资源说明](ui/models/operator/README.md)。
-
-- 原生 JavaScript（ES modules + import map）
-- [Leaflet](https://leafletjs.com/) — 2D 地图
-- [Three.js](https://threejs.org/) — 3D 场景
-- 开发无需 bundler
+- 原生 JavaScript（普通脚本 + 3D 侧 ES modules + import map），无打包工具
+- [Leaflet](https://leafletjs.com/) — 2D 地图；[Three.js](https://threejs.org/) — 3D 场景
+- 设计稿：[Figma · 实时雷达](https://www.figma.com/design/LINb0twz3q3Ajdc7ZUG2C3)
 
 ## 许可证
 

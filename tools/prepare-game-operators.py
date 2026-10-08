@@ -111,5 +111,5 @@ for job in jobs:
     folder=OUT/job['id'];folder.mkdir(exist_ok=True)
     for part in parts:
         source=EXPORTED/Path(part).with_suffix('.glb')
-        prepare(source,folder/source.name,'Body_3P' in part)
+        prepare(source,folder/source.name,part == parts[0])
     print(job['id'], 'prepared', len(parts), flush=True)

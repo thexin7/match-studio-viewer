@@ -1,4 +1,4 @@
-import { OPERATOR_MODELS } from './operator-catalog.js?v=1.1.0';
+import { OPERATOR_MODELS } from './operator-catalog.js?v=1.3.0';
 export { OPERATOR_MODELS };
 
 export function isEnemyOfViewer(viewer, source, isSelf = false) {
